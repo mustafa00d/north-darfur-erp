@@ -1,4 +1,11 @@
-# بيانات النشر على Render
+# بيانات النشر على Render - Blueprint (نشر متكامل: التطبيق + قاعدة PostgreSQL)
+# الضغط على الرابط أدناه ينشئ كل شيء تلقائياً
+
+databases:
+  - name: north-darfur-db
+    plan: free
+    databaseName: north_darfur
+    user: ndr_admin
 
 services:
   - type: web
@@ -7,6 +14,7 @@ services:
     plan: free
     buildCommand: npm install --omit=dev
     startCommand: node server/index.js
+    healthCheckPath: /api/health
     envVars:
       - key: PORT
         value: 3001
@@ -16,6 +24,7 @@ services:
         value: Admin@5523
       - key: JWT_SECRET
         generateValue: true
-      # اربط قاعدة PostgreSQL من Neon/Supabase لوضع تخزين دائم:
-      # - key: DATABASE_URL
-      #   sync: false
+      - key: DATABASE_URL
+        fromDatabase:
+          name: north-darfur-db
+          property: connectionString
