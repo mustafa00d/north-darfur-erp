@@ -3,35 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>إدخال البيانات - نظام التقارير</title>
+    <title data-i18n="usr.title">إدخال البيانات - نظام التقارير</title>
     <meta name="theme-color" content="#673AB7">
     <meta name="mobile-web-app-capable" content="yes">
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
+    <button class="lang-toggle" data-i18n-toggle onclick="I18N.toggle()">English</button>
+
     <!-- Login Page -->
     <div id="loginPage" class="login-page">
         <div class="login-header">
-            <h1>غرف طوارئ ولاية شمال دارفور</h1>
-            <h1 style="font-size:1.1rem;opacity:0.85;">North Darfur Emergency Rooms</h1>
-            <p>نظام تسجيل منح المحليات | Localities Grants Registration System</p>
+            <h1 data-i18n="usr.login.title">غرف طوارئ ولاية شمال دارفور</h1>
+            <p data-i18n="usr.login.subtitle">نظام تسجيل منح المحليات</p>
         </div>
         <div class="login-container">
             <div class="login-card">
-                <h2>تسجيل الدخول | Login</h2>
-                <div class="login-error" id="loginError">
+                <h2 data-i18n="login">تسجيل الدخول</h2>
+                <div class="login-error" id="loginError" data-i18n="err.invalidLogin">
                     البريد الإلكتروني أو كلمة المرور غير صحيحة
-                    <br>Invalid email or password
                 </div>
                 <form id="loginForm">
-                    <input type="email" id="loginEmail" class="login-input" placeholder="البريد الإلكتروني | Email" required autocomplete="email">
-                    <input type="password" id="loginPassword" class="login-input" placeholder="كلمة المرور | Password" required autocomplete="current-password">
-                    <button type="submit" class="login-btn">دخول | Login</button>
+                    <input type="email" id="loginEmail" class="login-input" data-i18n-ph="email" placeholder="البريد الإلكتروني" required autocomplete="email">
+                    <input type="password" id="loginPassword" class="login-input" data-i18n-ph="password" placeholder="كلمة المرور" required autocomplete="current-password">
+                    <button type="submit" class="login-btn" data-i18n="login.btn">دخول</button>
                 </form>
-                <div class="login-note">
+                <div class="login-note" data-i18n="usr.login.note">
                     ليس لديك حساب؟ تواصل مع مسؤول النظام
-                    <br>No account? Contact the system administrator
                 </div>
             </div>
         </div>
@@ -40,153 +39,114 @@
     <!-- Form Page -->
     <div id="formPage" class="form-page">
         <div class="form-header">
-            <h1>استمارة تسجيل منح المحليات وغرف طوارئ ولاية شمال دارفور</h1>
+            <h1 data-i18n="usr.form.title">استمارة تسجيل منح المحليات وغرف طوارئ ولاية شمال دارفور</h1>
             <p>
-                لجنة التقارير مجلس طوارئ شمال دارفور
-                <br>يجب ملئ الاستمارة من لجنة تقارير الغرف القاعدية
-                <br>يهدف هذا الاستمارة الي جمع بيانات المنح التي تم تمويلها و ذلك يساعد في ارشفة وتوثيق البيانات
+                <span data-i18n="usr.form.line1">لجنة التقارير مجلس طوارئ شمال دارفور</span>
+                <br><span data-i18n="usr.form.line2">يجب ملئ الاستمارة من لجنة تقارير الغرف القاعدية</span>
+                <br><span data-i18n="usr.form.line3">يهدف هذا الاستمارة الي جمع بيانات المنح التي تم تمويلها و ذلك يساعد في ارشفة وتوثيق البيانات</span>
             </p>
         </div>
 
         <div class="user-bar">
             <div class="user-info">
                 <span class="user-email" id="displayEmail"></span>
-                <button class="notif-btn" id="notifBtn" onclick="toggleNotifPanel()" title="الإشعارات">
+                <button class="notif-btn" id="notifBtn" onclick="toggleNotifPanel()" data-i18n-title="notif.title" title="الإشعارات">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
                         <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
                     </svg>
                     <span class="notif-badge" id="notifBadge" style="display:none;">0</span>
                 </button>
-                <a href="index.html" style="color:var(--text-light);font-size:0.85rem;text-decoration:none;">الرئيسية | Home</a>
+                <a href="index.html" style="color:var(--text-light);font-size:0.85rem;text-decoration:none;"><span data-i18n="home">الرئيسية</span></a>
             </div>
-            <span class="switch-account" onclick="doLogout()">تسجيل الخروج | Logout</span>
+            <span class="switch-account" onclick="doLogout()"><span data-i18n="logout">تسجيل الخروج</span></span>
         </div>
 
         <!-- Notifications Panel -->
         <div class="notif-panel hidden" id="notifPanel">
             <div class="notif-panel-header">
-                <span>الإشعارات | Notifications</span>
+                <span data-i18n="notif.title">الإشعارات</span>
                 <span onclick="closeNotifPanel()" style="cursor:pointer;font-weight:400;">✕</span>
             </div>
             <div id="notifList" style="overflow-y:auto;flex:1;">
-                <div class="empty-state"><h3>لا توجد إشعارات</h3></div>
+                <div class="empty-state"><h3 data-i18n="notif.empty">لا توجد إشعارات</h3></div>
             </div>
         </div>
 
         <div class="form-container">
             <div class="required-note">
-                <p>* تشير إلى أنّ السؤال مطلوب | * Indicates required question</p>
+                <p data-i18n="usr.form.required">* تشير إلى أنّ السؤال مطلوب</p>
             </div>
 
             <form id="reportForm">
                 <div class="form-card">
-                    <label class="form-label">
-                        اسم غرفة الطوارئ <span class="required">*</span>
-                        <br><span class="form-label-en">ERR Name</span>
-                    </label>
-                    <input type="text" name="errName" class="form-input" placeholder="إجابتك | Your answer" required>
+                    <label class="form-label"><span data-i18n="usr.lbl.errName">اسم غرفة الطوارئ</span> <span class="required">*</span></label>
+                    <input type="text" name="errName" class="form-input" data-i18n-ph="usr.form.answer" placeholder="إجابتك" required>
                 </div>
 
                 <div class="form-card">
-                    <label class="form-label">
-                        اسم المحلية <span class="required">*</span>
-                        <br><span class="form-label-en">Locality</span>
-                    </label>
+                    <label class="form-label"><span data-i18n="usr.lbl.locality">اسم المحلية</span> <span class="required">*</span></label>
                     <div class="radio-list" id="localityRadioList"></div>
                 </div>
 
                 <div class="form-card">
-                    <label class="form-label">
-                        المانح <span class="required">*</span>
-                        <br><span class="form-label-en">Donor</span>
-                    </label>
+                    <label class="form-label"><span data-i18n="usr.lbl.donor">المانح</span> <span class="required">*</span></label>
                     <div class="radio-list" id="donorRadioList"></div>
                 </div>
 
                 <div class="form-card">
-                    <label class="form-label">
-                        نوع الدعم / القطاع <span class="required">*</span>
-                        <br><span class="form-label-en">Type of Support / Sector</span>
-                    </label>
+                    <label class="form-label"><span data-i18n="usr.lbl.supportType">نوع الدعم / القطاع</span> <span class="required">*</span></label>
                     <div class="radio-list" id="supportTypeRadioList"></div>
                 </div>
 
                 <div class="form-card">
-                    <label class="form-label">
-                        تفاصيل الدعم - اشرح معلومات المشروع
-                        <br><span class="form-label-en">Support Details</span>
-                    </label>
-                    <textarea name="supportDescription" class="form-textarea" placeholder="إجابتك | Your answer"></textarea>
+                    <label class="form-label" data-i18n="usr.lbl.supportDetails">تفاصيل الدعم - اشرح معلومات المشروع</label>
+                    <textarea name="supportDescription" class="form-textarea" data-i18n-ph="usr.form.answer" placeholder="إجابتك"></textarea>
                 </div>
 
                 <div class="form-card">
-                    <label class="form-label">
-                        الشريك <span class="required">*</span>
-                        <br><span class="form-label-en">Partner</span>
-                    </label>
+                    <label class="form-label"><span data-i18n="usr.lbl.partner">الشريك</span> <span class="required">*</span></label>
                     <div class="radio-list" id="partnerRadioList"></div>
                 </div>
 
                 <div class="form-card">
-                    <label class="form-label">
-                        الشهر <span class="required">*</span>
-                        <br><span class="form-label-en">Month</span>
-                    </label>
+                    <label class="form-label"><span data-i18n="usr.lbl.month">الشهر</span> <span class="required">*</span></label>
                     <div class="radio-list" id="monthRadioList"></div>
                 </div>
 
                 <div class="form-card">
-                    <label class="form-label">
-                        المبلغ المستلم بالجنيه <span class="required">*</span>
-                        <br><span class="form-label-en">Actual Received Amount (SDG)</span>
-                    </label>
-                    <input type="number" name="amountReceived" class="form-input" placeholder="إجابتك | Your answer" min="0" required>
+                    <label class="form-label"><span data-i18n="usr.lbl.amount">المبلغ المستلم بالجنيه</span> <span class="required">*</span></label>
+                    <input type="number" name="amountReceived" class="form-input" data-i18n-ph="usr.form.answer" placeholder="إجابتك" min="0" required>
                 </div>
 
                 <div class="form-card">
-                    <label class="form-label">
-                        الوصول - عدد المستفيدين الإجمالي <span class="required">*</span>
-                        <br><span class="form-label-en">Reach - Total Beneficiaries</span>
-                    </label>
-                    <input type="number" name="beneficiariesTotal" class="form-input" placeholder="إجابتك | Your answer" min="0" required>
+                    <label class="form-label"><span data-i18n="usr.lbl.benTotal">الوصول - عدد المستفيدين الإجمالي</span> <span class="required">*</span></label>
+                    <input type="number" name="beneficiariesTotal" class="form-input" data-i18n-ph="usr.form.answer" placeholder="إجابتك" min="0" required>
                 </div>
 
                 <div class="form-card">
-                    <label class="form-label">
-                        الوصول - عدد المستفيدين الذكور <span class="required">*</span>
-                        <br><span class="form-label-en">Reach - Male Beneficiaries</span>
-                    </label>
-                    <input type="number" name="beneficiariesMale" class="form-input" placeholder="إجابتك | Your answer" min="0" required>
+                    <label class="form-label"><span data-i18n="usr.lbl.benMale">الوصول - عدد المستفيدين الذكور</span> <span class="required">*</span></label>
+                    <input type="number" name="beneficiariesMale" class="form-input" data-i18n-ph="usr.form.answer" placeholder="إجابتك" min="0" required>
                 </div>
 
                 <div class="form-card">
-                    <label class="form-label">
-                        الوصول - عدد المستفيدين الإناث <span class="required">*</span>
-                        <br><span class="form-label-en">Reach - Female Beneficiaries</span>
-                    </label>
-                    <input type="number" name="beneficiariesFemale" class="form-input" placeholder="إجابتك | Your answer" min="0" required>
+                    <label class="form-label"><span data-i18n="usr.lbl.benFemale">الوصول - عدد المستفيدين الإناث</span> <span class="required">*</span></label>
+                    <input type="number" name="beneficiariesFemale" class="form-input" data-i18n-ph="usr.form.answer" placeholder="إجابتك" min="0" required>
                 </div>
 
                 <div class="form-card">
-                    <label class="form-label">
-                        التحديات التي واجهت المشروع <span class="required">*</span>
-                        <br><span class="form-label-en">Challenges Faced</span>
-                    </label>
-                    <textarea name="challenges" class="form-textarea" placeholder="إجابتك | Your answer" required></textarea>
+                    <label class="form-label"><span data-i18n="usr.lbl.challenges">التحديات التي واجهت المشروع</span> <span class="required">*</span></label>
+                    <textarea name="challenges" class="form-textarea" data-i18n-ph="usr.form.answer" placeholder="إجابتك" required></textarea>
                 </div>
 
                 <div class="form-card">
-                    <label class="form-label">
-                        النتائج الإيجابية <span class="required">*</span>
-                        <br><span class="form-label-en">Positive Outcomes</span>
-                    </label>
-                    <textarea name="positiveOutcomes" class="form-textarea" placeholder="إجابتك | Your answer" required></textarea>
+                    <label class="form-label"><span data-i18n="usr.lbl.outcomes">النتائج الإيجابية</span> <span class="required">*</span></label>
+                    <textarea name="positiveOutcomes" class="form-textarea" data-i18n-ph="usr.form.answer" placeholder="إجابتك" required></textarea>
                 </div>
 
                 <div class="submit-section">
-                    <button type="submit" class="btn btn-primary" style="padding:12px 32px;font-size:1rem;">إرسال | Submit</button>
-                    <button type="button" class="btn btn-outline" onclick="clearForm()">محو النموذج | Clear</button>
+                    <button type="submit" class="btn btn-primary" style="padding:12px 32px;font-size:1rem;"><span data-i18n="usr.form.submit">إرسال</span></button>
+                    <button type="button" class="btn btn-outline" onclick="clearForm()"><span data-i18n="usr.form.clear">محو النموذج</span></button>
                 </div>
             </form>
 
@@ -196,37 +156,38 @@
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="22" height="22" style="color:var(--primary-color);">
                         <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/>
                     </svg>
-                    تقاريري وحالتها | My Reports & Status
+                    <span data-i18n="usr.myreports.title">تقاريري وحالتها</span>
                 </h3>
                 <div id="myReportsList">
-                    <div class="empty-state"><h3>لا توجد تقارير بعد</h3><p>أرسل تقريراً ليظهر هنا مع حالته</p></div>
+                    <div class="empty-state"><h3 data-i18n="usr.myreports.empty">لا توجد تقارير بعد</h3><p data-i18n="usr.myreports.empty2">أرسل تقريراً ليظهر هنا مع حالته</p></div>
                 </div>
             </div>
         </div>
 
         <footer class="footer">
-            <p>لجنة التقارير - مجلس طوارئ شمال دارفور | Reports Committee - North Darfur Emergency Council</p>
-            <p>© 2026 جميع الحقوق محفوظة | All rights reserved</p>
+            <p data-i18n="footer.committee">لجنة التقارير - مجلس طوارئ شمال دارفور</p>
+            <p data-i18n="footer.rights">© 2026 جميع الحقوق محفوظة</p>
         </footer>
     </div>
 
     <!-- Success Modal -->
     <div class="modal" id="successModal">
         <div class="modal-content">
-            <div class="modal-header"><h3>تم الإرسال بنجاح</h3><button class="modal-close" onclick="closeSuccessModal()">&times;</button></div>
+            <div class="modal-header"><h3 data-i18n="usr.success.title">تم الإرسال بنجاح</h3><button class="modal-close" onclick="closeSuccessModal()">&times;</button></div>
             <div class="modal-body" style="text-align:center;padding:40px;">
                 <div style="width:80px;height:80px;background:#E8F5E9;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style="width:40px;height:40px;color:var(--success-color);">
                         <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
                     </svg>
                 </div>
-                <h2 style="color:#1E8E3E;margin-bottom:10px;">تم إرسال التقرير بنجاح!</h2>
-                <p style="color:var(--text-light);">سيتم مراجعة التقرير من قبل الإدارة، وستصلك إشعار بالنتيجة.</p>
+                <h2 style="color:#1E8E3E;margin-bottom:10px;" data-i18n="usr.success.heading">تم إرسال التقرير بنجاح!</h2>
+                <p style="color:var(--text-light);" data-i18n="usr.success.body">سيتم مراجعة التقرير من قبل الإدارة، وستصلك إشعار بالنتيجة.</p>
             </div>
-            <div class="modal-footer"><button class="btn btn-primary" onclick="closeSuccessModal()">حسناً | OK</button></div>
+            <div class="modal-footer"><button class="btn btn-primary" onclick="closeSuccessModal()"><span data-i18n="usr.success.ok">حسناً</span></button></div>
         </div>
     </div>
 
+    <script src="js/i18n.js"></script>
     <script src="js/api.js"></script>
     <script>
         let meta = null;
@@ -287,15 +248,14 @@
         function populateRadioList(containerId, items, name, valueKey, labelAr, labelEn = null) {
             const container = document.getElementById(containerId);
             if (!container) return;
+            const lang = I18N.getLang();
             container.innerHTML = items.map(item => {
-                const arText = item[labelAr] || item.name || '';
-                const enText = labelEn && item[labelEn] ? item[labelEn] : '';
+                let text = item[labelAr] || item.name || '';
+                if (lang === 'en' && labelEn && item[labelEn]) text = item[labelEn];
                 return `
                     <div class="radio-item">
                         <input type="radio" id="${name}_${item[valueKey]}" name="${name}" value="${item[valueKey]}" required>
-                        <label for="${name}_${item[valueKey]}">
-                            ${arText}${enText ? ` <span class="en">/ ${enText}</span>` : ''}
-                        </label>
+                        <label for="${name}_${item[valueKey]}">${escapeHtml(text)}</label>
                     </div>
                 `;
             }).join('');
@@ -339,13 +299,13 @@
                 const reports = await API.request('/reports');
                 const container = document.getElementById('myReportsList');
                 if (!reports.length) {
-                    container.innerHTML = '<div class="empty-state"><h3>لا توجد تقارير بعد</h3><p>أرسل تقريراً ليظهر هنا مع حالته</p></div>';
+                    container.innerHTML = `<div class="empty-state"><h3>${I18N.t('usr.myreports.empty')}</h3><p>${I18N.t('usr.myreports.empty2')}</p></div>`;
                     return;
                 }
                 container.innerHTML = reports.map(r => `
                     <div class="detail-row" style="flex-wrap:wrap;">
                         <div class="detail-label">${formatDate(r.createdAt)}</div>
-                        <div class="detail-value" style="flex:1;">${escapeHtml(r.errName)} - ${escapeHtml(r.localityAr)}</div>
+                        <div class="detail-value" style="flex:1;">${escapeHtml(r.errName)} - ${escapeHtml(I18N.pick(r.localityAr, r.localityEn))}</div>
                         <div>${statusBadge(r.status)}</div>
                     </div>
                 `).join('');
@@ -365,7 +325,7 @@
                 const notifs = await API.request('/notifications');
                 const list = document.getElementById('notifList');
                 if (!notifs.length) {
-                    list.innerHTML = '<div class="empty-state"><h3>لا توجد إشعارات</h3></div>';
+                    list.innerHTML = `<div class="empty-state"><h3>${I18N.t('notif.empty')}</h3></div>`;
                 } else {
                     list.innerHTML = notifs.map(n => `
                         <div class="notif-item ${n.read ? '' : 'unread'}" onclick="markNotifRead(${n.id})">
@@ -396,7 +356,7 @@
         }
 
         function clearForm() {
-            if (confirm('هل أنت متأكد من محو جميع البيانات؟\nAre you sure you want to clear all data?')) {
+            if (confirm(I18N.t('usr.form.clearConfirm'))) {
                 document.getElementById('reportForm').reset();
                 if (currentUser && currentUser.localityId) {
                     const radio = document.querySelector(`input[name="localityId"][value="${currentUser.localityId}"]`);
@@ -416,6 +376,13 @@
         function closeSuccessModal() {
             document.getElementById('successModal').classList.remove('show');
         }
+
+        I18N.onLangChange(async function() {
+            if (currentUser && document.getElementById('formPage').style.display === 'block') {
+                await initForm();
+                loadMyReports();
+            }
+        });
     </script>
 </body>
 </html>

@@ -19,7 +19,7 @@ const API = (() => {
     try { data = await res.json(); } catch (e) { /* empty */ }
 
     if (!res.ok) {
-      const err = new Error(data?.error || `خطأ ${res.status}`);
+      const err = new Error(data?.error || I18N.t('err.http', { status: res.status }));
       err.status = res.status;
       err.data = data;
       if (res.status === 401 && auth) {
@@ -90,20 +90,24 @@ const API = (() => {
 
 // ==================== Utilities ====================
 
+function locale() {
+  return I18N.getLang() === 'ar' ? 'ar-EG' : 'en-GB';
+}
+
 function formatNumber(num) {
-  return new Intl.NumberFormat('ar-EG').format(Number(num) || 0);
+  return new Intl.NumberFormat(locale()).format(Number(num) || 0);
 }
 
 function formatDate(dateStr) {
   if (!dateStr) return '-';
-  return new Date(dateStr).toLocaleDateString('ar-EG', {
+  return new Date(dateStr).toLocaleDateString(locale(), {
     year: 'numeric', month: 'long', day: 'numeric'
   });
 }
 
 function formatDateTime(dateStr) {
   if (!dateStr) return '-';
-  return new Date(dateStr).toLocaleDateString('ar-EG', {
+  return new Date(dateStr).toLocaleDateString(locale(), {
     year: 'numeric', month: 'long', day: 'numeric',
     hour: '2-digit', minute: '2-digit'
   });
@@ -135,16 +139,14 @@ function showToast(message, type = 'success') {
 }
 
 function monthName(monthId) {
-  const months = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
-    'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
-  return months[Number(monthId) - 1] || monthId;
+  return I18N.t('months.' + Number(monthId)) || monthId;
 }
 
 function statusBadge(status) {
   const map = {
-    submitted: ['قيد المراجعة', 'status-pending'],
-    approved: ['تمت الموافقة', 'status-approved'],
-    rejected: ['مرفوض', 'status-rejected']
+    submitted: [I18N.t('status.submitted'), 'status-pending'],
+    approved: [I18N.t('status.approved'), 'status-approved'],
+    rejected: [I18N.t('status.rejected'), 'status-rejected']
   };
   const [label, cls] = map[status] || [status, 'status-pending'];
   return `<span class="status-badge ${cls}">${label}</span>`;

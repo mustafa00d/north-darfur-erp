@@ -770,3 +770,44 @@ body {
   .logo-text h1 { font-size: 1rem; }
   .dashboard-header { flex-direction: column; align-items: flex-start; }
 }
+
+/* ==================== Language Toggle ==================== */
+
+.lang-toggle {
+  position: fixed;
+  top: 14px;
+  inset-inline-end: 14px;
+  z-index: 2000;
+  background: rgba(255,255,255,0.15);
+  color: white;
+  border: 1px solid rgba(255,255,255,0.35);
+  border-radius: 20px;
+  padding: 6px 16px;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+  transition: var(--transition);
+}
+.lang-toggle:hover { background: rgba(255,255,255,0.3); }
+
+.count-badge {
+  background: var(--primary-color);
+  color: white;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  margin-inline-start: auto;
+}
+
+/* ==================== LTR Support ==================== */
+
+[dir="ltr"] .form-card { border-right: none; border-left: 4px solid transparent; }
+[dir="ltr"] .form-card:focus-within { border-right-color: transparent; border-left-color: var(--primary-color); }
+[dir="ltr"] .data-table th, [dir="ltr"] .data-table td,
+[dir="ltr"] .users-table th, [dir="ltr"] .users-table td { text-align: left; }
+[dir="ltr"] .item-card { border-right: none; border-left: 4px solid var(--primary-color); }
+[dir="ltr"] .notif-badge { right: auto; left: -2px; }
+[dir="ltr"] .status-dot { margin-left: 0; margin-right: 5px; }
+[dir="ltr"] .form-label .required { margin-left: 0; margin-right: 4px; }
