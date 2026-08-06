@@ -1,0 +1,21 @@
+# بيانات النشر على Render
+
+services:
+  - type: web
+    name: north-darfur-erp
+    runtime: node
+    plan: free
+    buildCommand: npm install --omit=dev
+    startCommand: node server/index.js
+    envVars:
+      - key: PORT
+        value: 3001
+      - key: ADMIN_EMAIL
+        value: admin@ndr.org
+      - key: ADMIN_PASSWORD
+        value: Admin@5523
+      - key: JWT_SECRET
+        generateValue: true
+      # اربط قاعدة PostgreSQL من Neon/Supabase لوضع تخزين دائم:
+      # - key: DATABASE_URL
+      #   sync: false

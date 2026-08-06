@@ -1,0 +1,1303 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>لوحة الإدارة - نظام التقارير</title>
+    <meta name="theme-color" content="#6B2D5B">
+    <meta name="mobile-web-app-capable" content="yes">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+</head>
+<body>
+    <div class="main-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo-section">
+                    <div class="logo-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
+                        </svg>
+                    </div>
+                    <div class="logo-text">
+                        <h1 class="bilingual">لوحة الإدارة <span class="en">Admin Dashboard</span></h1>
+                        <p>نظام إدارة التقارير والمنح | Reports & Grants Management</p>
+                    </div>
+                </div>
+                <div class="header-actions" id="headerActions" style="display:none;">
+                    <button class="notif-btn" onclick="toggleNotifPanel()" title="الإشعارات">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                        </svg>
+                        <span class="notif-badge" id="notifBadge" style="display:none;">0</span>
+                    </button>
+                    <span id="adminName" style="font-size:0.9rem;color:#ddd;"></span>
+                    <button class="btn btn-outline-light" onclick="doLogout()">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/>
+                        </svg>
+                        خروج
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <a href="index.html" class="back-link">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M19 12H5M12 19l-7-7 7-7"/>
+            </svg>
+            العودة للرئيسية | Back to Home
+        </a>
+
+        <!-- Notifications Panel -->
+        <div class="notif-panel hidden" id="notifPanel">
+            <div class="notif-panel-header">
+                <span>الإشعارات | Notifications</span>
+                <span onclick="closeNotifPanel()" style="cursor:pointer;font-weight:400;">✕</span>
+            </div>
+            <div id="notifList" style="overflow-y:auto;flex:1;">
+                <div class="empty-state"><h3>لا توجد إشعارات</h3></div>
+            </div>
+        </div>
+
+        <!-- Login Section -->
+        <div id="loginSection">
+            <div class="login-container" style="min-height:50vh;align-items:center;">
+                <div class="login-card">
+                    <h2>تسجيل الدخول | Login</h2>
+                    <p class="login-subtitle">أدخل بياناتك للوصول إلى لوحة الإدارة<br>Enter credentials to access admin panel</p>
+                    <div class="login-error" id="loginError">بيانات الدخول غير صحيحة أو الصلاحية غير كافية</div>
+                    <form id="loginForm">
+                        <input type="email" id="adminEmail" class="login-input" placeholder="البريد الإلكتروني | Email" required autocomplete="email">
+                        <input type="password" id="adminPassword" class="login-input" placeholder="كلمة المرور | Password" required autocomplete="current-password">
+                        <button type="submit" class="login-btn">دخول | Login</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dashboard -->
+        <div id="dashboardSection" style="display:none;">
+
+            <!-- Dashboard Header -->
+            <div class="dashboard-header">
+                <div class="dashboard-title">
+                    <h2 class="bilingual">لوحة التحكم الرئيسية <span class="en">Main Dashboard</span></h2>
+                    <p style="color: var(--text-light); font-size: 0.9rem;">إدارة كاملة للنظام والبيانات | Full System & Data Management</p>
+                </div>
+                <div class="dashboard-actions" style="display:flex;gap:10px;flex-wrap:wrap;">
+                    <button class="btn btn-success" onclick="exportToCSV()">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+                        تصدير Excel
+                    </button>
+                    <button class="btn btn-primary" onclick="exportToPDF()">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM8 14H6v-8h2v8zm4 0h-2V6h2v8zm4 0h-2v-4h2v4z"/></svg>
+                        تقرير PDF
+                    </button>
+                </div>
+            </div>
+
+            <!-- Summary Cards -->
+            <div class="summary-cards" style="padding-top:20px;">
+                <div class="summary-card">
+                    <div class="summary-number" id="dashTotalReports">0</div>
+                    <div class="summary-label">إجمالي التقارير<br>Total Reports</div>
+                </div>
+                <div class="summary-card green">
+                    <div class="summary-number" id="dashTotalAmount">0</div>
+                    <div class="summary-label">المبالغ (جنيه)<br>Amount (SDG)</div>
+                </div>
+                <div class="summary-card blue">
+                    <div class="summary-number" id="dashTotalBeneficiaries">0</div>
+                    <div class="summary-label">المستفيدين<br>Beneficiaries</div>
+                </div>
+                <div class="summary-card orange">
+                    <div class="summary-number" id="dashPending">0</div>
+                    <div class="summary-label">قيد المراجعة<br>Pending Review</div>
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="analytics">التحليلات | Analytics</button>
+                <button class="tab-btn" data-tab="reports">التقارير | Reports</button>
+                <button class="tab-btn" data-tab="users">المستخدمين | Users</button>
+                <button class="tab-btn" data-tab="activity">سجل النشاطات | Activity</button>
+                <button class="tab-btn" data-tab="settings">الإعدادات | Settings</button>
+                <button class="tab-btn" data-tab="share">المشاركة | Share</button>
+            </div>
+
+            <!-- Analytics Tab -->
+            <div class="tab-content active" id="analyticsTab">
+                <div class="charts-grid">
+                    <div class="chart-card">
+                        <h4>التوزيع حسب المحلية | By Locality</h4>
+                        <canvas id="localityChart" width="350" height="300"></canvas>
+                        <div class="legend-container" id="localityLegend"></div>
+                    </div>
+                    <div class="chart-card">
+                        <h4>التوزيع حسب المانح | By Donor</h4>
+                        <canvas id="donorChart" width="350" height="300"></canvas>
+                        <div class="legend-container" id="donorLegend"></div>
+                    </div>
+                    <div class="chart-card">
+                        <h4>التوزيع حسب القطاع | By Sector</h4>
+                        <canvas id="sectorChart" width="350" height="300"></canvas>
+                        <div class="legend-container" id="sectorLegend"></div>
+                    </div>
+                    <div class="chart-card">
+                        <h4>التقارير الشهرية | Monthly Reports</h4>
+                        <canvas id="monthlyChart" width="350" height="300"></canvas>
+                    </div>
+                    <div class="chart-card">
+                        <h4>المبالغ حسب المحلية | Amount by Locality</h4>
+                        <canvas id="amountChart" width="350" height="300"></canvas>
+                    </div>
+                    <div class="chart-card">
+                        <h4>المستفيدين حسب المحلية | Beneficiaries by Locality</h4>
+                        <canvas id="beneficiariesChart" width="350" height="300"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reports Tab -->
+            <div class="tab-content" id="reportsTab">
+                <div class="table-container">
+                    <div class="table-header">
+                        <h3>جميع التقارير | All Reports</h3>
+                        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                            <button class="btn btn-success" onclick="exportToCSV()">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+                                تصدير Excel
+                            </button>
+                            <button class="btn btn-primary" onclick="exportToPDF()">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM8 14H6v-8h2v8zm4 0h-2V6h2v8zm4 0h-2v-4h2v4z"/></svg>
+                                تقرير PDF
+                            </button>
+                        </div>
+                    </div>
+                    <div class="filter-group" style="margin-bottom:15px;">
+                        <select id="filterLocality" onchange="loadReports()">
+                            <option value="">جميع المحليات | All Localities</option>
+                        </select>
+                        <select id="filterDonor" onchange="loadReports()">
+                            <option value="">جميع المانحين | All Donors</option>
+                        </select>
+                        <select id="filterSector" onchange="loadReports()">
+                            <option value="">جميع القطاعات | All Sectors</option>
+                        </select>
+                        <select id="filterStatus" onchange="loadReports()">
+                            <option value="">كل الحالات | All Status</option>
+                            <option value="submitted">قيد المراجعة</option>
+                            <option value="approved">تمت الموافقة</option>
+                            <option value="rejected">مرفوض</option>
+                        </select>
+                        <input type="text" id="filterSearch" placeholder="بحث..." style="padding:8px 12px;border:1px solid var(--border-color);border-radius:8px;font-family:inherit;" onkeyup="if(event.key==='Enter')loadReports()">
+                    </div>
+                    <div style="overflow-x:auto;">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>التاريخ<br>Date</th>
+                                    <th>الغرفة<br>ERR</th>
+                                    <th>المحلية<br>Locality</th>
+                                    <th>المانح<br>Donor</th>
+                                    <th>القطاع<br>Sector</th>
+                                    <th>المبلغ<br>Amount</th>
+                                    <th>المستفيدين<br>Beneficiaries</th>
+                                    <th>الحالة<br>Status</th>
+                                    <th>إجراءات<br>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="reportsTableBody"></tbody>
+                        </table>
+                    </div>
+                    <div class="empty-state" id="noReportsMessage" style="display:none;">
+                        <h3>لا توجد تقارير | No Reports</h3>
+                        <p>لم يتم إضافة أي تقارير بعد</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Users Tab -->
+            <div class="tab-content" id="usersTab">
+                <div class="management-section">
+                    <h3>
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                        إضافة مستخدم جديد | Add New User
+                    </h3>
+                    <form id="addUserForm" class="add-form">
+                        <input type="text" id="userName" placeholder="الاسم الكامل | Full Name" required>
+                        <input type="email" id="userEmail" placeholder="البريد الإلكتروني | Email" required>
+                        <input type="password" id="userPassword" placeholder="كلمة المرور | Password" required>
+                        <select id="userLocality" required>
+                            <option value="">-- اختر المحلية --</option>
+                        </select>
+                        <select id="userRole">
+                            <option value="user">مستخدم | User</option>
+                            <option value="admin">مدير | Admin</option>
+                        </select>
+                        <button type="submit" class="btn btn-primary">إضافة | Add</button>
+                    </form>
+
+                    <h4 style="margin:20px 0 15px;color:var(--text-dark);display:flex;align-items:center;gap:10px;">
+                        المستخدمون المسجلون | Registered Users
+                        <span id="usersCount" style="background:var(--primary-color);color:white;padding:2px 10px;border-radius:12px;font-size:0.85rem;margin-right:auto;"></span>
+                    </h4>
+                    <div style="overflow-x:auto;">
+                        <table class="users-table">
+                            <thead>
+                                <tr>
+                                    <th>الاسم<br>Name</th>
+                                    <th>البريد الإلكتروني<br>Email</th>
+                                    <th>المحلية<br>Locality</th>
+                                    <th>الدور<br>Role</th>
+                                    <th>تاريخ الإضافة<br>Added</th>
+                                    <th>آخر دخول<br>Last Login</th>
+                                    <th>الحالة<br>Status</th>
+                                    <th>إجراءات<br>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="usersTableBody"></tbody>
+                        </table>
+                    </div>
+                    <div class="empty-state" id="noUsersMessage" style="display:none;">
+                        <h3>لا يوجد مستخدمون</h3>
+                        <p>قم بإضافة مستخدمين للسماح بإدخال البيانات</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Activity Tab -->
+            <div class="tab-content" id="activityTab">
+                <div class="table-header" style="padding:20px 20px 10px;">
+                    <h3 style="color:var(--primary-dark);">سجل النشاطات | Activity Log</h3>
+                    <button class="btn btn-outline" onclick="loadActivity()">تحديث | Refresh</button>
+                </div>
+                <div class="activity-list" id="activityList">
+                    <div class="empty-state"><h3>جارِ التحميل...</h3></div>
+                </div>
+            </div>
+
+            <!-- Settings Tab -->
+            <div class="tab-content" id="settingsTab">
+                <div class="management-section">
+                    <h3>
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+                        إدارة المحليات | Manage Localities
+                    </h3>
+                    <form id="addLocalityForm" class="add-form">
+                        <input type="text" id="localityNameAr" placeholder="اسم المحلية (عربي)" required>
+                        <input type="text" id="localityNameEn" placeholder="اسم المحلية (إنجليزي)" required>
+                        <input type="color" id="localityColor" value="#6B2D5B" title="اللون">
+                        <button type="submit" class="btn btn-primary">إضافة | Add</button>
+                    </form>
+                    <div class="items-grid" id="localitiesGrid"></div>
+                </div>
+
+                <div class="management-section">
+                    <h3>
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+                        إدارة المانحين | Manage Donors
+                    </h3>
+                    <form id="addDonorForm" class="add-form">
+                        <input type="text" id="donorName" placeholder="اسم المانح | Donor Name" required>
+                        <input type="color" id="donorColor" value="#3B82F6" title="اللون">
+                        <button type="submit" class="btn btn-primary">إضافة | Add</button>
+                    </form>
+                    <div class="items-grid" id="donorsGrid"></div>
+                </div>
+
+                <div class="management-section">
+                    <h3>
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+                        إدارة الشركاء | Manage Partners
+                    </h3>
+                    <form id="addPartnerForm" class="add-form">
+                        <input type="text" id="partnerName" placeholder="اسم الشريك | Partner Name" required>
+                        <button type="submit" class="btn btn-primary">إضافة | Add</button>
+                    </form>
+                    <div class="items-grid" id="partnersGrid"></div>
+                </div>
+
+                <div class="management-section" style="border:2px solid var(--danger-color);">
+                    <h3 style="color:var(--danger-color);">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                        منطقة الخطر | Danger Zone
+                    </h3>
+                    <p style="color:var(--text-light);margin-bottom:15px;">هذه الإجراءات لا يمكن التراجع عنها! | These actions cannot be undone!</p>
+                    <button class="btn btn-danger" onclick="deleteAllReports()">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                        حذف جميع التقارير | Delete All Reports
+                    </button>
+                </div>
+            </div>
+
+            <!-- Share Tab -->
+            <div class="tab-content" id="shareTab">
+                <div class="share-section">
+                    <h3>
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"/></svg>
+                        مشاركة مؤقتة | Temporary Sharing
+                    </h3>
+                    <div style="background:rgba(255,255,255,0.15);border-radius:12px;padding:20px;margin-bottom:15px;">
+                        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:15px;margin-bottom:15px;">
+                            <div>
+                                <label style="font-size:0.9rem;display:block;margin-bottom:5px;">اسم الرابط | Link Name</label>
+                                <input type="text" id="shareName" placeholder="مثال: تقرير شهري" style="width:100%;padding:10px;border:none;border-radius:8px;font-family:inherit;">
+                            </div>
+                            <div>
+                                <label style="font-size:0.9rem;display:block;margin-bottom:5px;">مدة الصلاحية | Expiry</label>
+                                <select id="shareExpiry" style="width:100%;padding:10px;border:none;border-radius:8px;font-family:inherit;">
+                                    <option value="1">ساعة | 1 Hour</option>
+                                    <option value="6">6 ساعات</option>
+                                    <option value="24" selected>يوم | 1 Day</option>
+                                    <option value="72">3 أيام</option>
+                                    <option value="168">أسبوع | 1 Week</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div style="margin-bottom:15px;">
+                            <label style="font-size:0.9rem;display:block;margin-bottom:10px;">محتوى المشاركة | Share Content</label>
+                            <div style="display:flex;flex-wrap:wrap;gap:10px;">
+                                <label class="share-option"><input type="checkbox" id="shareReports" checked> التقارير | Reports</label>
+                                <label class="share-option"><input type="checkbox" id="shareAnalytics" checked> التحليلات | Analytics</label>
+                                <label class="share-option"><input type="checkbox" id="shareUsers"> المستخدمين | Users</label>
+                            </div>
+                        </div>
+                        <button onclick="generateShareLink()" class="backup-btn create">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/></svg>
+                            إنشاء رابط مشاركة | Create Share Link
+                        </button>
+                    </div>
+                    <div id="activeShareLinks"></div>
+                </div>
+            </div>
+        </div>
+
+        <footer class="footer">
+            <p>لجنة التقارير - مجلس طوارئ شمال دارفور | Reports Committee - North Darfur Emergency Council</p>
+            <p>© 2026 جميع الحقوق محفوظة | All rights reserved</p>
+        </footer>
+    </div>
+
+    <!-- Report Detail / Review Modal -->
+    <div class="modal" id="reportModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>تفاصيل التقرير | Report Details</h3>
+                <button class="modal-close" onclick="closeReportModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="reportModalBody"></div>
+            <div class="modal-footer" id="reportModalFooter"></div>
+        </div>
+    </div>
+
+    <!-- Edit Report Modal -->
+    <div class="modal" id="editModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>تعديل التقرير | Edit Report</h3>
+                <button class="modal-close" onclick="closeEditModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="editModalBody"></div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="saveEditReport()">حفظ | Save</button>
+                <button class="btn btn-outline" onclick="closeEditModal()">إلغاء | Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script>
+        let currentUser = null;
+        let meta = null;
+        let allReports = [];
+
+        // ==================== Auth ====================
+
+        document.addEventListener('DOMContentLoaded', async function() {
+            const params = new URLSearchParams(window.location.search);
+            const shareToken = params.get('share');
+            if (shareToken) {
+                showShareView(shareToken);
+                return;
+            }
+            const user = API.getCurrentUser();
+            if (user && API.getToken()) {
+                try {
+                    const me = await API.request('/auth/me');
+                    currentUser = me.user;
+                    API.setAuth(API.getToken(), me.user);
+                    if (currentUser.role === 'admin') {
+                        showDashboard();
+                    } else {
+                        document.getElementById('loginError').textContent = 'حسابك ليس له صلاحيات الإدارة';
+                        document.getElementById('loginError').classList.add('show');
+                    }
+                } catch (e) { API.clearAuth(); }
+            }
+        });
+
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            document.getElementById('loginError').classList.remove('show');
+            try {
+                const user = await API.login(document.getElementById('adminEmail').value, document.getElementById('adminPassword').value);
+                if (user.role !== 'admin') {
+                    API.clearAuth();
+                    document.getElementById('loginError').textContent = 'حسابك ليس له صلاحيات الإدارة';
+                    document.getElementById('loginError').classList.add('show');
+                    return;
+                }
+                currentUser = user;
+                showDashboard();
+            } catch (err) {
+                document.getElementById('loginError').classList.add('show');
+            }
+        });
+
+        async function showDashboard() {
+            document.getElementById('loginSection').style.display = 'none';
+            document.getElementById('dashboardSection').style.display = 'block';
+            document.getElementById('headerActions').style.display = 'flex';
+            document.getElementById('adminName').textContent = currentUser.name;
+            await initDashboard();
+            loadNotifications();
+            setInterval(loadNotifications, 60000);
+        }
+
+        async function doLogout() {
+            await API.logout();
+            window.location.href = '/admin.html';
+        }
+
+        // ==================== Dashboard ====================
+
+        async function initDashboard() {
+            meta = await API.request('/meta');
+            await loadReports();
+            await Promise.all([
+                loadUsers(),
+                loadLocalities(),
+                loadDonors(),
+                loadPartners(),
+                loadActivity(),
+                loadShareLinks(),
+                loadAnalytics()
+            ]);
+        }
+
+        async function loadAnalytics() {
+            const stats = await API.request('/analytics/stats');
+            const reports = await API.request('/reports');
+            const totalAmount = reports.reduce((s, r) => s + (Number(r.amountReceived) || 0), 0);
+            const totalBeneficiaries = reports.reduce((s, r) => s + (Number(r.beneficiariesTotal) || 0), 0);
+            const pending = reports.filter(r => r.status === 'submitted').length;
+
+            document.getElementById('dashTotalReports').textContent = formatNumber(reports.length);
+            document.getElementById('dashTotalAmount').textContent = formatNumber(totalAmount);
+            document.getElementById('dashTotalBeneficiaries').textContent = formatNumber(totalBeneficiaries);
+            document.getElementById('dashPending').textContent = formatNumber(pending);
+
+            initCharts(stats);
+        }
+
+        // ==================== Tabs ====================
+
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+                document.getElementById(this.dataset.tab + 'Tab').classList.add('active');
+                if (this.dataset.tab === 'activity') loadActivity();
+                if (this.dataset.tab === 'share') loadShareLinks();
+            });
+        });
+
+        // ==================== Reports ====================
+
+        async function loadReports() {
+            const params = new URLSearchParams();
+            const loc = document.getElementById('filterLocality').value;
+            const don = document.getElementById('filterDonor').value;
+            const sect = document.getElementById('filterSector').value;
+            const st = document.getElementById('filterStatus').value;
+            const search = document.getElementById('filterSearch').value;
+            if (loc) params.set('localityId', loc);
+            if (don) params.set('donorId', don);
+            if (sect) params.set('sectorId', sect);
+            if (st) params.set('status', st);
+            if (search) params.set('search', search);
+
+            const qs = params.toString() ? '?' + params.toString() : '';
+            allReports = await API.request('/reports' + qs);
+            renderReportsTable();
+        }
+
+        function renderReportsTable() {
+            const tbody = document.getElementById('reportsTableBody');
+            const empty = document.getElementById('noReportsMessage');
+            if (!allReports.length) {
+                tbody.innerHTML = '';
+                empty.style.display = 'block';
+                return;
+            }
+            empty.style.display = 'none';
+            tbody.innerHTML = allReports.map(r => `
+                <tr>
+                    <td style="white-space:nowrap;">${formatDate(r.createdAt)}</td>
+                    <td><strong>${escapeHtml(r.errName)}</strong><br><small style="color:var(--text-light);">${escapeHtml(r.userName)}</small></td>
+                    <td>${escapeHtml(r.localityAr)}</td>
+                    <td>${escapeHtml(r.donorName)}</td>
+                    <td>${escapeHtml(r.supportAr)}</td>
+                    <td>${formatNumber(r.amountReceived)}</td>
+                    <td>${formatNumber(r.beneficiariesTotal)}</td>
+                    <td>${statusBadge(r.status)}</td>
+                    <td>
+                        <div class="actions-cell">
+                            <button class="btn btn-outline" onclick="viewReport(${r.id})">عرض</button>
+                            <button class="btn btn-primary" onclick="openEditReport(${r.id})">تعديل</button>
+                            ${r.status === 'submitted' ? `
+                                <button class="btn btn-success" onclick="reviewReport(${r.id}, 'approved')">موافقة</button>
+                                <button class="btn btn-danger" onclick="reviewReport(${r.id}, 'rejected')">رفض</button>
+                            ` : ''}
+                            <button class="btn btn-danger" onclick="deleteReport(${r.id})">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function viewReport(id) {
+            const r = allReports.find(x => x.id === id);
+            if (!r) return;
+            const note = r.reviewNote ? `<div class="detail-row"><div class="detail-label">ملاحظة المراجعة</div><div class="detail-value">${escapeHtml(r.reviewNote)}</div></div>` : '';
+            const reviewer = r.reviewerName ? `<div class="detail-row"><div class="detail-label">راجع بواسطة</div><div class="detail-value">${escapeHtml(r.reviewerName)}</div></div>` : '';
+            document.getElementById('reportModalBody').innerHTML = `
+                <div class="detail-row"><div class="detail-label">التاريخ</div><div class="detail-value">${formatDateTime(r.createdAt)}</div></div>
+                <div class="detail-row"><div class="detail-label">غرفة الطوارئ</div><div class="detail-value">${escapeHtml(r.errName)}</div></div>
+                <div class="detail-row"><div class="detail-label">المستخدم</div><div class="detail-value">${escapeHtml(r.userName)} (${escapeHtml(r.userEmail)})</div></div>
+                <div class="detail-row"><div class="detail-label">المحلية</div><div class="detail-value">${escapeHtml(r.localityAr)} / ${escapeHtml(r.localityEn)}</div></div>
+                <div class="detail-row"><div class="detail-label">المانح</div><div class="detail-value">${escapeHtml(r.donorName)}</div></div>
+                <div class="detail-row"><div class="detail-label">القطاع</div><div class="detail-value">${r.supportIcon || ''} ${escapeHtml(r.supportAr)}</div></div>
+                <div class="detail-row"><div class="detail-label">الشريك</div><div class="detail-value">${escapeHtml(r.partnerName)}</div></div>
+                <div class="detail-row"><div class="detail-label">الشهر</div><div class="detail-value">${monthName(r.monthId)}</div></div>
+                <div class="detail-row"><div class="detail-label">المبلغ المستلم</div><div class="detail-value">${formatNumber(r.amountReceived)} جنيه</div></div>
+                <div class="detail-row"><div class="detail-label">المستفيدين</div><div class="detail-value">${formatNumber(r.beneficiariesTotal)} (ذكور: ${formatNumber(r.beneficiariesMale)} / إناث: ${formatNumber(r.beneficiariesFemale)})</div></div>
+                <div class="detail-row"><div class="detail-label">تفاصيل الدعم</div><div class="detail-value">${escapeHtml(r.supportDescription || '-')}</div></div>
+                <div class="detail-row"><div class="detail-label">التحديات</div><div class="detail-value">${escapeHtml(r.challenges || '-')}</div></div>
+                <div class="detail-row"><div class="detail-label">النتائج</div><div class="detail-value">${escapeHtml(r.positiveOutcomes || '-')}</div></div>
+                <div class="detail-row"><div class="detail-label">الحالة</div><div class="detail-value">${statusBadge(r.status)}</div></div>
+                ${reviewer}
+                ${note}
+            `;
+            document.getElementById('reportModalFooter').innerHTML = `
+                <button class="btn btn-outline" onclick="closeReportModal()">إغلاق | Close</button>
+            `;
+            document.getElementById('reportModal').classList.add('show');
+        }
+
+        async function reviewReport(id, status) {
+            const note = status === 'rejected' ? (prompt('سبب الرفض | Reason for rejection:') || '') : '';
+            try {
+                await API.request(`/reports/${id}/review`, 'POST', { status, note });
+                showToast(status === 'approved' ? 'تمت الموافقة على التقرير' : 'تم رفض التقرير');
+                loadReports();
+                loadActivity();
+            } catch (e) { showToast(e.message, 'error'); }
+        }
+
+        async function deleteReport(id) {
+            if (!confirm('هل أنت متأكد من حذف هذا التقرير؟')) return;
+            try {
+                await API.request(`/reports/${id}`, 'DELETE');
+                showToast('تم حذف التقرير');
+                loadReports();
+                loadActivity();
+            } catch (e) { showToast(e.message, 'error'); }
+        }
+
+        // ==================== Edit Report ====================
+
+        let editingReport = null;
+
+        function openEditReport(id) {
+            const r = allReports.find(x => x.id === id);
+            if (!r) return;
+            if (r.status === 'approved') {
+                showToast('لا يمكن تعديل تقرير تمت الموافقة عليه', 'error');
+                return;
+            }
+            editingReport = r;
+            document.getElementById('editModalBody').innerHTML = `
+                <div class="form-card" style="margin:0 0 12px;box-shadow:none;border:1px solid var(--border-color);">
+                    <label class="form-label">اسم غرفة الطوارئ <span class="required">*</span></label>
+                    <input type="text" id="editErrName" class="form-input" value="${escapeHtml(r.errName)}">
+                </div>
+                <div class="form-card" style="margin:0 0 12px;box-shadow:none;border:1px solid var(--border-color);">
+                    <label class="form-label">تفاصيل الدعم</label>
+                    <textarea id="editSupportDesc" class="form-textarea">${escapeHtml(r.supportDescription || '')}</textarea>
+                </div>
+                <div class="form-card" style="margin:0 0 12px;box-shadow:none;border:1px solid var(--border-color);">
+                    <label class="form-label">المبلغ المستلم (جنيه) <span class="required">*</span></label>
+                    <input type="number" id="editAmount" class="form-input" value="${r.amountReceived}" min="0">
+                </div>
+                <div class="form-card" style="margin:0 0 12px;box-shadow:none;border:1px solid var(--border-color);">
+                    <label class="form-label">إجمالي المستفيدين <span class="required">*</span></label>
+                    <input type="number" id="editBenefTotal" class="form-input" value="${r.beneficiariesTotal}" min="0">
+                </div>
+                <div class="form-card" style="margin:0 0 12px;box-shadow:none;border:1px solid var(--border-color);">
+                    <label class="form-label">التحديات</label>
+                    <textarea id="editChallenges" class="form-textarea">${escapeHtml(r.challenges || '')}</textarea>
+                </div>
+                <div class="form-card" style="margin:0 0 12px;box-shadow:none;border:1px solid var(--border-color);">
+                    <label class="form-label">النتائج الإيجابية</label>
+                    <textarea id="editOutcomes" class="form-textarea">${escapeHtml(r.positiveOutcomes || '')}</textarea>
+                </div>
+            `;
+            document.getElementById('editModal').classList.add('show');
+        }
+
+        async function saveEditReport() {
+            if (!editingReport) return;
+            try {
+                await API.request(`/reports/${editingReport.id}`, 'PUT', {
+                    errName: document.getElementById('editErrName').value,
+                    supportDescription: document.getElementById('editSupportDesc').value,
+                    amountReceived: parseFloat(document.getElementById('editAmount').value),
+                    beneficiariesTotal: parseInt(document.getElementById('editBenefTotal').value),
+                    challenges: document.getElementById('editChallenges').value,
+                    positiveOutcomes: document.getElementById('editOutcomes').value
+                });
+                showToast('تم حفظ التعديلات');
+                closeEditModal();
+                loadReports();
+                loadActivity();
+            } catch (e) { showToast(e.message, 'error'); }
+        }
+
+        function closeEditModal() {
+            document.getElementById('editModal').classList.remove('show');
+            editingReport = null;
+        }
+
+        // ==================== Users ====================
+
+        async function loadUsers() {
+            const users = await API.request('/users');
+            document.getElementById('usersCount').textContent = users.length;
+            const tbody = document.getElementById('usersTableBody');
+            const empty = document.getElementById('noUsersMessage');
+            if (!users.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
+            empty.style.display = 'none';
+
+            const localities = meta.localities;
+            tbody.innerHTML = users.map(u => {
+                const loc = localities.find(l => l.id === u.localityId);
+                return `
+                <tr>
+                    <td><strong>${escapeHtml(u.name)}</strong></td>
+                    <td>${escapeHtml(u.email)}</td>
+                    <td>${loc ? escapeHtml(loc.nameAr) : '-'}</td>
+                    <td>${u.role === 'admin' ? 'مدير | Admin' : 'مستخدم | User'}</td>
+                    <td>${formatDate(u.createdAt)}</td>
+                    <td>${formatDateTime(u.lastLogin)}</td>
+                    <td><span class="status-dot ${u.active ? 'on' : 'off'}"></span>${u.active ? 'نشط' : 'موقوف'}</td>
+                    <td>
+                        <div class="actions-cell">
+                            <button class="btn btn-outline" onclick="toggleUserStatus(${u.id}, ${u.active ? 'false' : 'true'})">${u.active ? 'إيقاف' : 'تفعيل'}</button>
+                            <button class="btn btn-primary" onclick="resetUserPassword(${u.id})">تغيير كلمة المرور</button>
+                            ${u.email !== currentUser.email ? `<button class="btn btn-danger" onclick="deleteUser(${u.id})">حذف</button>` : ''}
+                        </div>
+                    </td>
+                </tr>
+            `}).join('');
+        }
+
+        document.getElementById('addUserForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const payload = {
+                name: document.getElementById('userName').value,
+                email: document.getElementById('userEmail').value,
+                password: document.getElementById('userPassword').value,
+                localityId: parseInt(document.getElementById('userLocality').value) || null,
+                role: document.getElementById('userRole').value
+            };
+            try {
+                await API.request('/users', 'POST', payload);
+                showToast('تم إضافة المستخدم بنجاح');
+                this.reset();
+                loadUsers();
+                loadActivity();
+            } catch (err) { showToast(err.message, 'error'); }
+        });
+
+        async function toggleUserStatus(id, active) {
+            try {
+                await API.request(`/users/${id}`, 'PUT', { active });
+                showToast(active ? 'تم تفعيل المستخدم' : 'تم إيقاف المستخدم');
+                loadUsers();
+            } catch (e) { showToast(e.message, 'error'); }
+        }
+
+        async function resetUserPassword(id) {
+            const pwd = prompt('كلمة المرور الجديدة | New password (6+ chars):');
+            if (!pwd) return;
+            try {
+                await API.request(`/users/${id}`, 'PUT', { password: pwd });
+                showToast('تم تغيير كلمة المرور');
+                loadActivity();
+            } catch (e) { showToast(e.message, 'error'); }
+        }
+
+        async function deleteUser(id) {
+            if (!confirm('هل أنت متأكد من حذف هذا المستخدم؟')) return;
+            try {
+                await API.request(`/users/${id}`, 'DELETE');
+                showToast('تم حذف المستخدم');
+                loadUsers();
+                loadActivity();
+            } catch (e) { showToast(e.message, 'error'); }
+        }
+
+        // ==================== Activity ====================
+
+        async function loadActivity() {
+            try {
+                const items = await API.request('/activity?limit=200');
+                const list = document.getElementById('activityList');
+                if (!items.length) {
+                    list.innerHTML = '<div class="empty-state"><h3>لا توجد نشاطات بعد</h3></div>';
+                    return;
+                }
+                const icons = { 'إضافة تقرير': '📝', 'تعديل تقرير': '✏️', 'حذف تقرير': '🗑️', 'الموافقة على تقرير': '✅', 'رفض تقرير': '❌', 'تسجيل دخول': '🔑', 'إضافة مستخدم': '👤', 'حذف مستخدم': '🚫', 'تحديث مستخدم': '🔄', 'إضافة محلية': '📍', 'حذف محلية': '🗑️', 'تعديل محلية': '📍', 'إضافة مانح': '🤝', 'حذف مانح': '🗑️', 'تعديل مانح': '🤝', 'إضافة شريك': '🤝', 'حذف شريك': '🗑️', 'إنشاء رابط مشاركة': '🔗', 'حذف رابط مشاركة': '🔗' };
+                list.innerHTML = items.map(a => `
+                    <div class="activity-item">
+                        <div class="activity-icon">${icons[a.action] || '📋'}</div>
+                        <div class="activity-body">
+                            <div class="activity-action">${escapeHtml(a.action)} <span style="color:var(--primary-color);">${escapeHtml(a.userName)}</span></div>
+                            ${a.details ? `<div class="activity-details">${escapeHtml(a.details)}</div>` : ''}
+                            <div class="activity-time">${formatDateTime(a.createdAt)}</div>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (e) { /* ignore */ }
+        }
+
+        // ==================== Settings ====================
+
+        async function loadLocalities() {
+            const items = await API.request('/settings/localities');
+            document.getElementById('localitiesGrid').innerHTML = items.map(l => `
+                <div class="item-card" style="border-color:${l.color}">
+                    <div class="item-info">
+                        <div class="item-color" style="background:${l.color}"></div>
+                        <div><div class="item-name">${escapeHtml(l.nameAr)}</div><div class="item-name-en">${escapeHtml(l.nameEn)}</div></div>
+                    </div>
+                    <button class="delete-btn" onclick="deleteLocality(${l.id})" title="حذف">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                    </button>
+                </div>
+            `).join('');
+            populateSelect('filterLocality', items, 'id', 'nameAr');
+            populateSelect('userLocality', items, 'id', 'nameAr');
+        }
+
+        document.getElementById('addLocalityForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            try {
+                await API.request('/settings/localities', 'POST', {
+                    nameAr: document.getElementById('localityNameAr').value,
+                    nameEn: document.getElementById('localityNameEn').value,
+                    color: document.getElementById('localityColor').value
+                });
+                showToast('تمت إضافة المحلية');
+                this.reset();
+                loadLocalities(); loadActivity();
+            } catch (err) { showToast(err.message, 'error'); }
+        });
+
+        async function deleteLocality(id) {
+            if (!confirm('حذف هذه المحلية؟ سيتم فقدان بيانات التقارير المرتبطة.')) return;
+            try {
+                await API.request(`/settings/localities/${id}`, 'DELETE');
+                showToast('تم حذف المحلية');
+                loadLocalities(); loadActivity();
+            } catch (e) { showToast(e.message, 'error'); }
+        }
+
+        async function loadDonors() {
+            const items = await API.request('/settings/donors');
+            document.getElementById('donorsGrid').innerHTML = items.map(d => `
+                <div class="item-card" style="border-color:${d.color}">
+                    <div class="item-info">
+                        <div class="item-color" style="background:${d.color}"></div>
+                        <div><div class="item-name">${escapeHtml(d.name)}</div></div>
+                    </div>
+                    <button class="delete-btn" onclick="deleteDonor(${d.id})" title="حذف">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                    </button>
+                </div>
+            `).join('');
+            populateSelect('filterDonor', items, 'id', 'name');
+        }
+
+        document.getElementById('addDonorForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            try {
+                await API.request('/settings/donors', 'POST', {
+                    name: document.getElementById('donorName').value,
+                    color: document.getElementById('donorColor').value
+                });
+                showToast('تمت إضافة المانح');
+                this.reset();
+                loadDonors(); loadActivity();
+            } catch (err) { showToast(err.message, 'error'); }
+        });
+
+        async function deleteDonor(id) {
+            if (!confirm('حذف هذا المانح؟')) return;
+            try {
+                await API.request(`/settings/donors/${id}`, 'DELETE');
+                showToast('تم حذف المانح');
+                loadDonors(); loadActivity();
+            } catch (e) { showToast(e.message, 'error'); }
+        }
+
+        async function loadPartners() {
+            const items = await API.request('/settings/partners');
+            document.getElementById('partnersGrid').innerHTML = items.map(p => `
+                <div class="item-card">
+                    <div class="item-info"><div><div class="item-name">${escapeHtml(p.name)}</div></div></div>
+                    <button class="delete-btn" onclick="deletePartner(${p.id})" title="حذف">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        document.getElementById('addPartnerForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            try {
+                await API.request('/settings/partners', 'POST', { name: document.getElementById('partnerName').value });
+                showToast('تمت إضافة الشريك');
+                this.reset();
+                loadPartners(); loadActivity();
+            } catch (err) { showToast(err.message, 'error'); }
+        });
+
+        async function deletePartner(id) {
+            if (!confirm('حذف هذا الشريك؟')) return;
+            try {
+                await API.request(`/settings/partners/${id}`, 'DELETE');
+                showToast('تم حذف الشريك');
+                loadPartners(); loadActivity();
+            } catch (e) { showToast(e.message, 'error'); }
+        }
+
+        async function deleteAllReports() {
+            if (!confirm('هل أنت متأكد من حذف جميع التقارير؟ هذا الإجراء لا يمكن التراجع عنه.')) return;
+            if (!confirm('تأكيد أخير: سيتم حذف جميع التقارير نهائياً.')) return;
+            try {
+                const reports = await API.request('/reports');
+                for (const r of reports) {
+                    await API.request(`/reports/${r.id}`, 'DELETE');
+                }
+                showToast('تم حذف جميع التقارير');
+                loadReports(); loadActivity();
+            } catch (e) { showToast(e.message, 'error'); }
+        }
+
+        function populateSelect(selectId, options, valueKey, textKey) {
+            const select = document.getElementById(selectId);
+            if (!select) return;
+            const current = select.value;
+            select.innerHTML = '<option value="">-- اختر --</option>';
+            options.forEach(o => {
+                const opt = document.createElement('option');
+                opt.value = o[valueKey];
+                opt.textContent = o[textKey];
+                select.appendChild(opt);
+            });
+            select.value = current;
+        }
+
+        // ==================== Share ====================
+
+        async function generateShareLink() {
+            const shareReports = document.getElementById('shareReports').checked;
+            const shareAnalytics = document.getElementById('shareAnalytics').checked;
+            const shareUsers = document.getElementById('shareUsers').checked;
+            if (!shareReports && !shareAnalytics && !shareUsers) {
+                showToast('اختر محتوى للمشاركة', 'error');
+                return;
+            }
+            try {
+                const link = await API.request('/share', 'POST', {
+                    name: document.getElementById('shareName').value,
+                    expiryHours: document.getElementById('shareExpiry').value,
+                    shareReports, shareAnalytics, shareUsers
+                });
+                navigator.clipboard.writeText(link.url).then(() => showToast('تم نسخ رابط المشاركة'));
+                document.getElementById('shareName').value = '';
+                loadShareLinks();
+            } catch (e) { showToast(e.message, 'error'); }
+        }
+
+        async function loadShareLinks() {
+            try {
+                const links = await API.request('/share');
+                const container = document.getElementById('activeShareLinks');
+                if (!links.length) { container.innerHTML = ''; return; }
+                const base = window.location.origin + window.location.pathname;
+                container.innerHTML = `
+                    <div style="background:rgba(255,255,255,0.1);border-radius:10px;padding:15px;">
+                        <h4 style="margin-bottom:10px;font-size:0.95rem;">الروابط النشطة | Active Links (${links.length})</h4>
+                        ${links.map(l => {
+                            const perms = [];
+                            if (l.permissions.reports) perms.push('التقارير');
+                            if (l.permissions.analytics) perms.push('التحليلات');
+                            if (l.permissions.users) perms.push('المستخدمين');
+                            return `
+                            <div class="active-share-link">
+                                <div>
+                                    <strong>${escapeHtml(l.name)}</strong>
+                                    <div style="font-size:0.8rem;opacity:0.85;">${perms.join(' • ')} | ينتهي: ${formatDateTime(l.expiresAt)} | مشاهدات: ${l.viewCount}</div>
+                                </div>
+                                <div style="display:flex;gap:8px;">
+                                    <button onclick="copyShareLink('${l.token}')" style="background:white;color:#059669;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-family:inherit;font-size:0.85rem;">نسخ</button>
+                                    <button onclick="deleteShareLink('${l.id}')" style="background:rgba(239,68,68,0.2);color:white;border:1px solid rgba(239,68,68,0.5);padding:6px 12px;border-radius:6px;cursor:pointer;font-family:inherit;font-size:0.85rem;">حذف</button>
+                                </div>
+                            </div>
+                        `; }).join('')}
+                    </div>
+                `;
+            } catch (e) { /* ignore */ }
+        }
+
+        function copyShareLink(token) {
+            const url = window.location.origin + window.location.pathname + '?share=' + token;
+            navigator.clipboard.writeText(url).then(() => showToast('تم نسخ الرابط'));
+        }
+
+        async function deleteShareLink(id) {
+            if (!confirm('حذف هذا الرابط؟')) return;
+            try {
+                await API.request(`/share/${id}`, 'DELETE');
+                showToast('تم حذف الرابط');
+                loadShareLinks();
+            } catch (e) { showToast(e.message, 'error'); }
+        }
+
+        // ==================== Share View (public) ====================
+
+        async function showShareView(token) {
+            document.getElementById('loginSection').style.display = 'none';
+            document.getElementById('dashboardSection').style.display = 'block';
+            document.getElementById('headerActions').style.display = 'none';
+            document.querySelectorAll('.tab-btn').forEach(b => b.style.display = 'none');
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+
+            try {
+                const data = await API.getShareData(token);
+                document.querySelector('.dashboard-title h2').innerHTML = '📤 عرض مشترك | Shared View';
+                document.querySelector('.dashboard-title p').textContent = data.link.name;
+                document.querySelector('.dashboard-actions').style.display = 'none';
+
+                if (data.permissions.analytics) {
+                    const summaryHtml = `
+                        <div class="summary-cards" style="padding-top:20px;">
+                            <div class="summary-card"><div class="summary-number">${formatNumber(data.summary)}</div><div class="summary-label">تقارير معتمدة</div></div>
+                            <div class="summary-card green"><div class="summary-number">${formatNumber(data.totalAmount)}</div><div class="summary-label">إجمالي المبالغ (جنيه)</div></div>
+                            <div class="summary-card blue"><div class="summary-number">${formatNumber(data.totalBeneficiaries)}</div><div class="summary-label">المستفيدين</div></div>
+                        </div>
+                    `;
+                    document.getElementById('dashboardSection').insertAdjacentHTML('afterbegin', summaryHtml);
+                }
+
+                if (data.permissions.reports) {
+                    document.getElementById('reportsTab').classList.add('active');
+                    if (data.reports.length) {
+                        document.getElementById('reportsTableBody').innerHTML = data.reports.map(r => `
+                            <tr>
+                                <td>${formatDate(r.created_at)}</td>
+                                <td><strong>${escapeHtml(r.err_name)}</strong></td>
+                                <td>${escapeHtml(r.locality_ar)}</td>
+                                <td>${escapeHtml(r.donor_name)}</td>
+                                <td>${escapeHtml(r.support_ar)}</td>
+                                <td>${formatNumber(r.amount_received)}</td>
+                                <td>${formatNumber(r.beneficiaries_total)}</td>
+                                <td>${statusBadge('approved')}</td>
+                                <td>-</td>
+                            </tr>
+                        `).join('');
+                    }
+                }
+                if (data.permissions.users && data.users) {
+                    document.getElementById('usersTab').classList.add('active');
+                    document.getElementById('usersTableBody').innerHTML = data.users.map(u => `
+                        <tr><td>${escapeHtml(u.name)}</td><td>${escapeHtml(u.email)}</td><td>-</td><td>-</td><td>-</td><td>-</td><td><span class="status-dot on"></span>نشط</td><td>-</td></tr>
+                    `).join('');
+                }
+            } catch (e) {
+                document.getElementById('dashboardSection').innerHTML = `
+                    <div class="login-container" style="min-height:60vh;align-items:center;">
+                        <div class="login-card" style="text-align:center;">
+                            <div style="font-size:3rem;margin-bottom:15px;">⚠️</div>
+                            <h2 style="color:var(--danger-color);margin-bottom:10px;">رابط غير صالح أو منتهي</h2>
+                            <p style="color:var(--text-light);margin-bottom:20px;">${escapeHtml(e.message)}</p>
+                            <a href="admin.html" class="btn btn-primary" style="text-decoration:none;">العودة لتسجيل الدخول</a>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // ==================== Notifications ====================
+
+        async function loadNotifications() {
+            try {
+                const count = await API.request('/notifications/unread-count');
+                const badge = document.getElementById('notifBadge');
+                if (count.count > 0) { badge.textContent = count.count; badge.style.display = 'flex'; }
+                else badge.style.display = 'none';
+                const notifs = await API.request('/notifications');
+                const list = document.getElementById('notifList');
+                if (!notifs.length) list.innerHTML = '<div class="empty-state"><h3>لا توجد إشعارات</h3></div>';
+                else list.innerHTML = notifs.map(n => `
+                    <div class="notif-item ${n.read ? '' : 'unread'}" onclick="markNotifRead(${n.id})">
+                        <div class="notif-title">${escapeHtml(n.title)}</div>
+                        <div class="notif-msg">${escapeHtml(n.message)}</div>
+                        <div class="notif-time">${formatDateTime(n.createdAt)}</div>
+                    </div>
+                `).join('');
+            } catch (e) { /* ignore */ }
+        }
+
+        async function markNotifRead(id) {
+            await API.request(`/notifications/${id}/read`, 'POST');
+            loadNotifications();
+        }
+
+        function toggleNotifPanel() {
+            const panel = document.getElementById('notifPanel');
+            panel.classList.toggle('hidden');
+            if (!panel.classList.contains('hidden')) {
+                API.request('/notifications/read-all', 'POST');
+                loadNotifications();
+            }
+        }
+        function closeNotifPanel() { document.getElementById('notifPanel').classList.add('hidden'); }
+
+        // ==================== Charts ====================
+
+        function drawPieChart(canvasId, data) {
+            const canvas = document.getElementById(canvasId);
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const cx = canvas.width / 2, cy = canvas.height / 2;
+            const radius = Math.min(cx, cy) - 50;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const total = data.reduce((s, i) => s + i.value, 0);
+            if (!total) {
+                ctx.fillStyle = '#666'; ctx.font = 'bold 16px Cairo'; ctx.textAlign = 'center';
+                ctx.fillText('لا توجد بيانات', cx, cy); return;
+            }
+            let start = -Math.PI / 2;
+            data.forEach(item => {
+                const angle = (item.value / total) * 2 * Math.PI;
+                ctx.beginPath(); ctx.moveTo(cx, cy);
+                ctx.arc(cx, cy, radius, start, start + angle); ctx.closePath();
+                ctx.fillStyle = item.color; ctx.fill();
+                ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
+                if (item.value / total > 0.05) {
+                    const la = start + angle / 2;
+                    const lx = cx + radius * 0.65 * Math.cos(la);
+                    const ly = cy + radius * 0.65 * Math.sin(la);
+                    ctx.fillStyle = '#fff'; ctx.font = 'bold 13px Cairo'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                    ctx.fillText(`${Math.round(item.value / total * 100)}%`, lx, ly);
+                }
+                start += angle;
+            });
+        }
+
+        function drawBarChart(canvasId, data) {
+            const canvas = document.getElementById(canvasId);
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const pad = 55;
+            const cw = canvas.width - pad * 2, ch = canvas.height - pad * 2;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (!data.length || data.every(d => !d.value)) {
+                ctx.fillStyle = '#666'; ctx.font = 'bold 16px Cairo'; ctx.textAlign = 'center';
+                ctx.fillText('لا توجد بيانات', canvas.width / 2, canvas.height / 2); return;
+            }
+            const max = Math.max(...data.map(d => d.value));
+            const bw = cw / data.length - 10;
+            data.forEach((item, i) => {
+                const bh = (item.value / max) * ch;
+                const x = pad + i * (bw + 10) + 5;
+                const y = canvas.height - pad - bh;
+                const grad = ctx.createLinearGradient(x, y, x, canvas.height - pad);
+                grad.addColorStop(0, item.color); grad.addColorStop(1, item.color + '88');
+                ctx.fillStyle = grad;
+                ctx.beginPath(); ctx.roundRect(x, y, bw, bh, [5, 5, 0, 0]); ctx.fill();
+                ctx.fillStyle = '#333'; ctx.font = 'bold 11px Cairo'; ctx.textAlign = 'center';
+                ctx.fillText(formatNumber(item.value), x + bw / 2, y - 5);
+                ctx.fillStyle = '#666'; ctx.font = '10px Cairo';
+                ctx.save();
+                ctx.translate(x + bw / 2, canvas.height - pad + 10);
+                ctx.rotate(-Math.PI / 4); ctx.textAlign = 'right';
+                ctx.fillText(item.label.substring(0, 10), 0, 0);
+                ctx.restore();
+            });
+        }
+
+        function drawLineChart(canvasId, data) {
+            const canvas = document.getElementById(canvasId);
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const pad = 45;
+            const cw = canvas.width - pad * 2, ch = canvas.height - pad * 2;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (!data.length || data.every(d => !d.value)) {
+                ctx.fillStyle = '#666'; ctx.font = 'bold 16px Cairo'; ctx.textAlign = 'center';
+                ctx.fillText('لا توجد بيانات', canvas.width / 2, canvas.height / 2); return;
+            }
+            const max = Math.max(...data.map(d => d.value)) || 1;
+            const stepX = cw / (data.length - 1 || 1);
+            ctx.strokeStyle = '#E0E0E0'; ctx.lineWidth = 1;
+            for (let i = 0; i <= 4; i++) {
+                const y = pad + (ch / 4) * i;
+                ctx.beginPath(); ctx.moveTo(pad, y); ctx.lineTo(canvas.width - pad, y); ctx.stroke();
+            }
+            const points = data.map((item, i) => ({
+                x: pad + i * stepX,
+                y: canvas.height - pad - (item.value / max) * ch
+            }));
+            // Fill
+            const grad = ctx.createLinearGradient(0, pad, 0, canvas.height - pad);
+            grad.addColorStop(0, 'rgba(107,45,91,0.3)'); grad.addColorStop(1, 'rgba(107,45,91,0)');
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            points.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
+            ctx.lineTo(points[points.length - 1].x, canvas.height - pad);
+            ctx.lineTo(points[0].x, canvas.height - pad); ctx.closePath(); ctx.fill();
+            // Line
+            ctx.strokeStyle = '#6B2D5B'; ctx.lineWidth = 3;
+            ctx.beginPath();
+            points.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
+            ctx.stroke();
+            // Points
+            points.forEach((p, i) => {
+                ctx.fillStyle = '#6B2D5B'; ctx.beginPath(); ctx.arc(p.x, p.y, 5, 0, Math.PI * 2); ctx.fill();
+                ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(p.x, p.y, 2.5, 0, Math.PI * 2); ctx.fill();
+                if (data[i].value > 0) {
+                    ctx.fillStyle = '#333'; ctx.font = 'bold 10px Cairo'; ctx.textAlign = 'center';
+                    ctx.fillText(formatNumber(data[i].value), p.x, p.y - 10);
+                }
+                ctx.fillStyle = '#666'; ctx.font = '10px Cairo'; ctx.textAlign = 'center';
+                ctx.fillText(data[i].label.substring(0, 3), p.x, canvas.height - pad + 15);
+            });
+        }
+
+        function initCharts(stats) {
+            const locData = stats.localityStats.filter(s => s.count > 0).map(s => ({ label: s.nameAr, value: s.count, color: s.color }));
+            drawPieChart('localityChart', locData);
+            document.getElementById('localityLegend').innerHTML = locData.map(s => `<div class="legend-item"><div class="legend-color" style="background:${s.color}"></div>${s.nameAr}</div>`).join('');
+
+            const donData = stats.donorStats.filter(s => s.count > 0).map(s => ({ label: s.name, value: s.count, color: s.color }));
+            drawPieChart('donorChart', donData);
+            document.getElementById('donorLegend').innerHTML = donData.map(s => `<div class="legend-item"><div class="legend-color" style="background:${s.color}"></div>${s.name}</div>`).join('');
+
+            const secData = stats.sectorStats.filter(s => s.count > 0).map(s => ({ label: s.nameAr, value: s.count, color: s.color }));
+            drawPieChart('sectorChart', secData);
+            document.getElementById('sectorLegend').innerHTML = secData.map(s => `<div class="legend-item"><div class="legend-color" style="background:${s.color}"></div>${s.nameAr}</div>`).join('');
+
+            drawLineChart('monthlyChart', stats.monthStats.map(m => ({ label: m.nameAr, value: m.count })));
+            drawBarChart('amountChart', stats.localityStats.filter(s => s.totalAmount > 0).map(s => ({ label: s.nameAr, value: s.totalAmount, color: s.color })));
+            drawBarChart('beneficiariesChart', stats.localityStats.filter(s => s.totalBeneficiaries > 0).map(s => ({ label: s.nameAr, value: s.totalBeneficiaries, color: s.color })));
+        }
+
+        // ==================== Export ====================
+
+        function exportToCSV() {
+            if (!allReports.length) { showToast('لا توجد بيانات للتصدير', 'error'); return; }
+            const headers = ['التاريخ', 'اسم الغرفة', 'المحلية', 'المانح', 'نوع الدعم', 'الشريك', 'الشهر', 'المبلغ', 'المستفيدين الإجمالي', 'المستفيدين الذكور', 'المستفيدين الإناث', 'التحديات', 'النتائج الإيجابية', 'تفاصيل الدعم', 'الحالة'];
+            const rows = allReports.map(r => [
+                r.createdAt, r.errName, r.localityAr, r.donorName, r.supportAr, r.partnerName,
+                monthName(r.monthId), r.amountReceived, r.beneficiariesTotal, r.beneficiariesMale,
+                r.beneficiariesFemale, r.challenges, r.positiveOutcomes, r.supportDescription, r.status
+            ].map(c => `"${(c || '').toString().replace(/"/g, '""')}"`).join(','));
+            const csv = '\uFEFF' + headers.join(',') + '\n' + rows.join('\n');
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `تقارير_غرف_الطوارئ_${new Date().toISOString().split('T')[0]}.csv`;
+            link.click();
+            showToast('تم تصدير البيانات');
+        }
+
+        function exportToPDF() {
+            if (!allReports.length) { showToast('لا توجد بيانات للتصدير', 'error'); return; }
+            const el = document.createElement('div');
+            el.style.cssText = 'direction:rtl;padding:20px;font-family:Cairo,sans-serif;color:#000;background:#fff;';
+            const totalAmount = allReports.reduce((s, r) => s + (Number(r.amountReceived) || 0), 0);
+            const totalBen = allReports.reduce((s, r) => s + (Number(r.beneficiariesTotal) || 0), 0);
+            el.innerHTML = `
+                <h2 style="text-align:center;margin-bottom:5px;">تقرير غرف طوارئ شمال دارفور</h2>
+                <p style="text-align:center;font-size:12px;margin-bottom:20px;">North Darfur Emergency Rooms Report - ${formatDate(new Date())}</p>
+                <table style="width:100%;margin-bottom:20px;">
+                    <tr>
+                        <td style="background:#6B2D5B;color:#fff;padding:10px;text-align:center;">عدد التقارير: ${formatNumber(allReports.length)}</td>
+                        <td style="background:#1E8E3E;color:#fff;padding:10px;text-align:center;">المبالغ: ${formatNumber(totalAmount)} جنيه</td>
+                        <td style="background:#1E3A8A;color:#fff;padding:10px;text-align:center;">المستفيدين: ${formatNumber(totalBen)}</td>
+                    </tr>
+                </table>
+                <table border="1" cellpadding="6" cellspacing="0" style="width:100%;border-collapse:collapse;font-size:10px;">
+                    <thead>
+                        <tr style="background:#F5F1FA;">
+                            <th>التاريخ</th><th>الغرفة</th><th>المحلية</th><th>المانح</th><th>القطاع</th><th>المبلغ</th><th>المستفيدين</th><th>الحالة</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${allReports.map(r => `
+                            <tr>
+                                <td>${formatDate(r.createdAt)}</td>
+                                <td>${escapeHtml(r.errName)}</td>
+                                <td>${escapeHtml(r.localityAr)}</td>
+                                <td>${escapeHtml(r.donorName)}</td>
+                                <td>${escapeHtml(r.supportAr)}</td>
+                                <td>${formatNumber(r.amountReceived)}</td>
+                                <td>${formatNumber(r.beneficiariesTotal)}</td>
+                                <td>${r.status === 'approved' ? 'معتمد' : r.status === 'rejected' ? 'مرفوض' : 'قيد المراجعة'}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+                <p style="text-align:center;font-size:10px;margin-top:20px;">لجنة التقارير - مجلس طوارئ شمال دارفور</p>
+            `;
+            document.body.appendChild(el);
+            html2pdf().set({
+                margin: 10,
+                filename: `تقرير_غرف_الطوارئ_${new Date().toISOString().split('T')[0]}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+            }).from(el).save().then(() => el.remove());
+        }
+
+        // ==================== Modals close ====================
+
+        function closeReportModal() { document.getElementById('reportModal').classList.remove('show'); }
+        document.getElementById('reportModal').addEventListener('click', function(e) { if (e.target === this) closeReportModal(); });
+    </script>
+</body>
+</html>
