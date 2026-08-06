@@ -363,6 +363,28 @@
                     </div>
                 </div>
 
+                <div class="management-section" id="aiSettingsSection" style="border:2px solid #7C3AED;">
+                    <h3 style="color:#7C3AED;">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+                        <span data-i18n="adm.ai.title">الذكاء الاصطناعي</span>
+                    </h3>
+                    <p style="color:var(--text-light);margin-bottom:15px;font-size:0.9rem;" data-i18n="adm.ai.desc">إضافة مفتاح Gemini مجاني يفعل التحليل التلقائي ومساعدة المراجعة والمساعد الذكي. بدون مفتاح يعمل النظام بالمنطق الذكي المدمج.</p>
+                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:15px;margin-bottom:15px;">
+                        <div>
+                            <label style="font-size:0.9rem;display:block;margin-bottom:5px;" data-i18n="adm.ai.key">مفتاح Gemini API</label>
+                            <input type="password" id="aiKeyInput" placeholder="AIza..." style="width:100%;padding:10px;border:none;border-radius:8px;font-family:inherit;direction:ltr;" autocomplete="off">
+                        </div>
+                        <div style="align-self:end;">
+                            <span id="aiStatusBadge" class="status-badge" style="background:rgba(0,0,0,0.1);">—</span>
+                        </div>
+                    </div>
+                    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                        <button class="btn btn-primary" onclick="saveAiKey()"><span data-i18n="adm.ai.save">حفظ المفتاح</span></button>
+                        <button class="btn btn-outline" onclick="clearAiKey()"><span data-i18n="adm.ai.clear">إزالة المفتاح</span></button>
+                    </div>
+                    <p style="color:var(--text-light);margin-top:12px;font-size:0.8rem;" data-i18n="adm.ai.howto">1. ادخل aistudio.google.com/apikey وانسخ مفتاحك — 2. الصقه هنا — 3. احفظ. المفتاح يظهر مقنعاً دائماً.</p>
+                </div>
+
                 <div class="management-section" style="border:2px solid var(--danger-color);">
                     <h3 style="color:var(--danger-color);">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
@@ -456,6 +478,20 @@
                             <div id="opsReviewers"><div class="empty-state"><h3 data-i18n="adm.ops.noReviewers">لا توجد مراجعات بعد</h3></div></div>
                         </div>
                     </div>
+                    <div style="background:rgba(124,58,237,0.08);border:1px dashed #7C3AED;border-radius:12px;padding:18px;margin-top:15px;">
+                        <h4 style="margin-bottom:12px;color:#7C3AED;display:flex;align-items:center;gap:8px;">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                            <span data-i18n="adm.ai.analysis">التحليل الذكي</span>
+                        </h4>
+                        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
+                            <select id="aiAnalysisYear" style="padding:10px;border:none;border-radius:8px;font-family:inherit;"></select>
+                            <select id="aiAnalysisMonth" style="padding:10px;border:none;border-radius:8px;font-family:inherit;">
+                                <option value="" data-i18n="adm.ai.allMonths">كل الشهور</option>
+                            </select>
+                            <button class="btn btn-primary" onclick="runAiAnalysis()"><span data-i18n="adm.ai.runAnalysis">توليد التحليل</span></button>
+                        </div>
+                        <div id="aiAnalysisResult"><p style="color:var(--text-light);font-size:0.9rem;" data-i18n="adm.ai.analysisHint">اختر السنة والشهر ثم اضغط «توليد التحليل» لتحصل على ملخص جاهز للعرض على المانحين.</p></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -509,6 +545,7 @@
 
     <script src="js/i18n.js"></script>
     <script src="js/api.js"></script>
+    <script src="js/chat.js"></script>
     <script>
         let currentUser = null;
         let meta = null;
@@ -598,8 +635,10 @@
                 loadPartners(),
                 loadActivity(),
                 loadShareLinks(),
-                loadAnalytics()
+                loadAnalytics(),
+                loadAiSettings()
             ]);
+            populateAiAnalysisSelectors();
         }
 
         async function loadAnalytics() {
@@ -817,8 +856,13 @@
                 <div class="detail-row"><div class="detail-label">${I18N.t('adm.view.status')}</div><div class="detail-value">${statusBadge(r.status)}</div></div>
                 ${reviewer}
                 ${note}
+                <div id="aiReviewPanel"></div>
             `;
             document.getElementById('reportModalFooter').innerHTML = `
+                ${r.status === 'submitted' ? `<button class="btn btn-primary" style="background:#7C3AED;border-color:#7C3AED;" onclick="aiReview(${r.id})">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                    <span data-i18n="adm.ai.assist">مساعدة الذكاء</span>
+                </button>` : ''}
                 <button class="btn btn-outline" onclick="closeReportModal()">${I18N.t('close')}</button>
             `;
             document.getElementById('reportModal').classList.add('show');
@@ -1726,6 +1770,111 @@
                 html2canvas: { scale: 2, useCORS: true },
                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
             }).from(el).save().then(() => el.remove());
+        }
+
+        // ==================== AI (ذكاء) ====================
+
+        async function aiReview(id) {
+            const panel = document.getElementById('aiReviewPanel');
+            panel.innerHTML = `<div class="empty-state"><h3>${I18N.t('adm.ai.thinking')}</h3></div>`;
+            try {
+                const r = await API.request(`/ai/review/${id}`, 'POST');
+                const v = r.verdict;
+                const verdictMap = {
+                    approve: { label: I18N.t('adm.ai.verdict.approve'), color: '#1E8E3E' },
+                    reject: { label: I18N.t('adm.ai.verdict.reject'), color: '#D32F2F' },
+                    needs_review: { label: I18N.t('adm.ai.verdict.needs'), color: '#F59E0B' }
+                };
+                const vm = verdictMap[v] || verdictMap.needs_review;
+                const levels = {
+                    error: { label: I18N.t('adm.ai.lvl.error'), color: '#D32F2F' },
+                    warn: { label: I18N.t('adm.ai.lvl.warn'), color: '#F59E0B' },
+                    info: { label: I18N.t('adm.ai.lvl.info'), color: '#3B82F6' }
+                };
+                panel.innerHTML = `
+                    <div style="border:1px solid #7C3AED;border-radius:12px;padding:15px;margin-top:12px;background:rgba(124,58,237,0.06);">
+                        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px;">
+                            <strong style="color:#7C3AED;">🤖 ${I18N.t('adm.ai.result')}</strong>
+                            <span class="status-badge" style="background:${vm.color};color:#fff;">${vm.label} · ${r.confidence}%</span>
+                        </div>
+                        <p style="margin-bottom:10px;line-height:1.7;">${escapeHtml(r.summary)}</p>
+                        ${r.checks.length ? `<div style="margin-bottom:10px;">${r.checks.map(c => `
+                            <div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:5px;font-size:0.9rem;">
+                                <span class="status-badge" style="background:${levels[c.level].color};color:#fff;flex-shrink:0;">${levels[c.level].label}</span>
+                                <span><strong>${escapeHtml(c.label)}</strong><br><small style="color:var(--text-light);">${escapeHtml(c.detail)}</small></span>
+                            </div>`).join('')}</div>` : ''}
+                        ${r.suggestedNote ? `<p style="background:rgba(255,255,255,0.6);border-radius:8px;padding:10px;font-size:0.9rem;">📋 ${escapeHtml(r.suggestedNote)}</p>` : ''}
+                        <p style="margin-top:10px;font-size:0.75rem;color:var(--text-light);">${r.source === 'llm' ? I18N.t('adm.ai.source.llm') : I18N.t('adm.ai.source.rules')}</p>
+                    </div>`;
+                panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            } catch (e) {
+                panel.innerHTML = `<p style="color:var(--danger-color);font-size:0.9rem;margin-top:8px;">${escapeHtml(e.message)}</p>`;
+            }
+        }
+
+        async function loadAiSettings() {
+            try {
+                const s = await API.request('/ai/settings');
+                const badge = document.getElementById('aiStatusBadge');
+                badge.textContent = s.keyMasked ? `${I18N.t('adm.ai.status.on')} (${s.keyMasked})` : I18N.t('adm.ai.status.off');
+                badge.style.background = s.keyMasked ? 'rgba(30,142,62,0.2)' : 'rgba(0,0,0,0.1)';
+                badge.style.color = s.keyMasked ? '#1E8E3E' : 'var(--text-light)';
+            } catch (e) { /* غير مدير لا يرى الإعدادات */ }
+        }
+
+        async function saveAiKey() {
+            const key = document.getElementById('aiKeyInput').value.trim();
+            if (!key) return showToast(I18N.t('adm.ai.keyEmpty'), 'error');
+            try {
+                const r = await API.request('/ai/settings', 'PUT', { apiKey: key });
+                showToast(r.enabled ? I18N.t('adm.ai.saved') : I18N.t('adm.ai.savedOff'));
+                document.getElementById('aiKeyInput').value = '';
+                loadAiSettings();
+            } catch (e) { showToast(e.message, 'error'); }
+        }
+
+        async function clearAiKey() {
+            if (!confirm(I18N.t('adm.ai.confirmClear'))) return;
+            try {
+                await API.request('/ai/settings', 'PUT', { apiKey: '' });
+                showToast(I18N.t('adm.ai.cleared'));
+                loadAiSettings();
+            } catch (e) { showToast(e.message, 'error'); }
+        }
+
+        function populateAiAnalysisSelectors() {
+            const yearSel = document.getElementById('aiAnalysisYear');
+            const now = new Date().getFullYear();
+            yearSel.innerHTML = '';
+            for (let y = now; y >= now - 6; y--) {
+                yearSel.innerHTML += `<option value="${y}" ${y === now ? 'selected' : ''}>${y}</option>`;
+            }
+            const monthSel = document.getElementById('aiAnalysisMonth');
+            monthSel.innerHTML = `<option value="" data-i18n="adm.ai.allMonths">كل الشهور</option>` +
+                (window.MONTH_NAMES || []).map((m, i) => `<option value="${i + 1}">${m}</option>`).join('');
+            I18N.apply();
+        }
+
+        async function runAiAnalysis() {
+            const year = document.getElementById('aiAnalysisYear').value;
+            const monthId = document.getElementById('aiAnalysisMonth').value;
+            const out = document.getElementById('aiAnalysisResult');
+            out.innerHTML = `<div class="empty-state"><h3>${I18N.t('adm.ai.thinking')}</h3></div>`;
+            try {
+                const r = await API.request(`/ai/analysis?year=${year}${monthId ? '&monthId=' + monthId : ''}`);
+                const s = r.stats;
+                out.innerHTML = `
+                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:12px;">
+                        <div class="summary-card" style="margin:0;"><div class="summary-number" style="font-size:1.3rem;">${formatNumber(s.total)}</div><div class="summary-label">${I18N.t('adm.ai.s.total')}</div></div>
+                        <div class="summary-card green" style="margin:0;"><div class="summary-number" style="font-size:1.3rem;">${formatNumber(s.approved)}</div><div class="summary-label">${I18N.t('adm.ai.s.approved')}</div></div>
+                        <div class="summary-card orange" style="margin:0;"><div class="summary-number" style="font-size:1.3rem;">${formatNumber(s.beneficiaries)}</div><div class="summary-label">${I18N.t('adm.ai.s.ben')}</div></div>
+                        <div class="summary-card red" style="margin:0;"><div class="summary-number" style="font-size:1.3rem;">${formatNumber(s.amount)}</div><div class="summary-label">${I18N.t('adm.ai.s.amount')}</div></div>
+                    </div>
+                    <p style="line-height:1.9;background:rgba(255,255,255,0.7);border-radius:10px;padding:14px;white-space:pre-line;">${escapeHtml(r.narrative || '')}</p>
+                    <p style="margin-top:8px;font-size:0.75rem;color:var(--text-light);">${r.source === 'llm' ? I18N.t('adm.ai.source.llm') : I18N.t('adm.ai.source.rules')}</p>`;
+            } catch (e) {
+                out.innerHTML = `<p style="color:var(--danger-color);font-size:0.9rem;">${escapeHtml(e.message)}</p>`;
+            }
         }
 
         // ==================== Modals close ====================

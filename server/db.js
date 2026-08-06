@@ -152,6 +152,11 @@ CREATE TABLE IF NOT EXISTS password_resets (
   used INTEGER DEFAULT 0,
   created_at TEXT DEFAULT (${ts})
 );
+
+CREATE TABLE IF NOT EXISTS app_settings (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL
+);
 `.split(';\n\n').map(s => s.trim()).filter(Boolean);
 }
 
