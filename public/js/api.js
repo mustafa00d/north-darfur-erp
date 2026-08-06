@@ -70,9 +70,17 @@ const API = (() => {
     return request('/analytics/summary', 'GET', null, false);
   }
 
+  async function getMe() {
+    return request('/auth/me', 'GET', null, true);
+  }
+
   // Share public access
   async function getShareData(token) {
     return request(`/share/public/${token}`, 'GET', null, false);
+  }
+
+  async function shareAuth(token, password) {
+    return request(`/share/public/${token}/auth`, 'POST', { password }, false);
   }
 
   return {
@@ -83,8 +91,10 @@ const API = (() => {
     getToken,
     getCurrentUser,
     clearAuth,
+    getMe,
     getSummary,
-    getShareData
+    getShareData,
+    shareAuth
   };
 })();
 
@@ -156,4 +166,12 @@ function escapeHtml(str) {
   const div = document.createElement('div');
   div.textContent = str == null ? '' : String(str);
   return div.innerHTML;
+}
+
+function goHomeByRole(role) {
+  window.location.href = role === 'admin' ? '/admin.html' : '/user.html';
+}
+
+function pickLocality(loc) {
+  return I18N.getLang() === 'ar' ? loc.locality_ar || loc.nameAr : loc.locality_en || loc.nameEn;
 }

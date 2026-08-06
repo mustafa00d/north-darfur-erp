@@ -59,10 +59,13 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', time: new Date().toISOString() });
 });
 
+// Root = secure login page (served before static so index.html is never default)
+app.get('/', (req, res) => res.sendFile(path.join(publicDir, 'login.html')));
+
 // Static frontend
 app.use(express.static(publicDir));
-app.get(/^\/(index|user|admin)?$/, (req, res) => {
-  const page = req.path.replace(/\//g, '') || 'index';
+app.get(/^\/(index|user|admin)$/, (req, res) => {
+  const page = req.path.replace(/\//g, '');
   const file = path.join(publicDir, `${page}.html`);
   if (fs.existsSync(file)) {
     res.sendFile(file);

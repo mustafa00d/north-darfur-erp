@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title data-i18n="lgn.title">نظام تقارير غرف طوارئ ولاية شمال دارفور</title>
+    <meta name="theme-color" content="#6B2D5B">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Cairo', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            position: relative;
+            overflow: hidden;
+        }
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        }
+        .login-shell {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 420px;
+        }
+        .login-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 25px 80px rgba(0,0,0,0.45);
+            padding: 38px 34px;
+            animation: fadeUp 0.5s ease;
+        }
+        @keyframes fadeUp {
+            from { transform: translateY(30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .login-logo {
+            width: 74px; height: 74px;
+            margin: 0 auto 16px;
+            border-radius: 22px;
+            background: linear-gradient(135deg, #6B2D5B, #8B4789);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 30px rgba(107,45,91,0.4);
+        }
+        .login-logo svg { width: 40px; height: 40px; color: white; }
+        .login-card h1 {
+            font-size: 1.25rem;
+            color: var(--primary-dark);
+            text-align: center;
+            margin: 0 0 6px;
+            line-height: 1.5;
+        }
+        .login-card .subtitle {
+            text-align: center;
+            color: var(--text-light);
+            font-size: 0.9rem;
+            margin-bottom: 26px;
+        }
+        .field {
+            margin-bottom: 16px;
+            position: relative;
+        }
+        .field label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 7px;
+        }
+        .field .input-wrap { position: relative; }
+        .field input {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 13px 42px 13px 14px;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            font-family: inherit;
+            font-size: 0.95rem;
+            transition: var(--transition);
+            background: #FAFAFD;
+        }
+        .field input:focus {
+            border-color: var(--primary-color);
+            outline: none;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(107,45,91,0.12);
+        }
+        .field .f-icon {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            inset-inline-start: 13px;
+            width: 20px; height: 20px;
+            color: #9CA3AF;
+        }
+        [dir="ltr"] .field .f-icon { inset-inline-start: auto; inset-inline-end: 13px; }
+        .login-error {
+            display: none;
+            background: #FEF2F2;
+            color: #B91C1C;
+            border: 1px solid #FECACA;
+            border-radius: 10px;
+            padding: 11px 14px;
+            font-size: 0.85rem;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+        .login-error.show { display: block; }
+        .login-success {
+            display: none;
+            background: #F0FDF4;
+            color: #15803D;
+            border: 1px solid #BBF7D0;
+            border-radius: 10px;
+            padding: 11px 14px;
+            font-size: 0.85rem;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+        .login-success.show { display: block; }
+        .btn-primary {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            color: white;
+            font-family: inherit;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: var(--transition);
+            box-shadow: 0 8px 24px rgba(107,45,91,0.35);
+        }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 30px rgba(107,45,91,0.45); }
+        .btn-primary:disabled { opacity: 0.7; cursor: not-allowed; transform: none; }
+        .login-links {
+            margin-top: 18px;
+            text-align: center;
+            font-size: 0.85rem;
+        }
+        .login-links a {
+            color: var(--primary-color);
+            font-weight: 700;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .login-links a:hover { text-decoration: underline; }
+        .secure-note {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            margin-top: 20px;
+            color: #9CA3AF;
+            font-size: 0.78rem;
+        }
+        .secure-note svg { width: 14px; height: 14px; }
+        .back-link {
+            display: block;
+            margin-top: 16px;
+            text-align: center;
+            color: var(--primary-color);
+            font-weight: 700;
+            font-size: 0.85rem;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .back-link:hover { text-decoration: underline; }
+        .step-hint { display: none; }
+    </style>
+</head>
+<body>
+    <button class="lang-toggle" data-i18n-toggle onclick="I18N.toggle()">English</button>
+
+    <div class="login-shell">
+        <div class="login-card">
+            <div class="login-logo">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/>
+                </svg>
+            </div>
+
+            <!-- ============ STEP: login ============ -->
+            <div id="step-login">
+                <h1 data-i18n="lgn.title">نظام تقارير غرف طوارئ ولاية شمال دارفور</h1>
+                <p class="subtitle" data-i18n="lgn.subtitle">سجّل دخولك للوصول إلى النظام</p>
+                <div class="login-error" id="loginError"></div>
+                <div class="login-success" id="loginSuccess"></div>
+                <form id="loginForm" autocomplete="on">
+                    <div class="field">
+                        <label for="loginEmail" data-i18n="email">البريد الإلكتروني</label>
+                        <div class="input-wrap">
+                            <input type="email" id="loginEmail" placeholder="example@ndr.org" required>
+                            <svg class="f-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label for="loginPassword" data-i18n="password">كلمة المرور</label>
+                        <div class="input-wrap">
+                            <input type="password" id="loginPassword" autocomplete="current-password" required>
+                            <svg class="f-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-primary" id="loginBtn" data-i18n="lgn.signIn">تسجيل الدخول</button>
+                </form>
+                <div class="login-links">
+                    <a onclick="showStep('forgot')" data-i18n="lgn.forgot">نسيت كلمة المرور؟</a>
+                </div>
+                <div class="secure-note">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                    <span data-i18n="lgn.secure">دخول آمن ومشفر</span>
+                </div>
+            </div>
+
+            <!-- ============ STEP: forgot ============ -->
+            <div id="step-forgot" style="display:none">
+                <h1 data-i18n="lgn.forgotTitle">استعادة كلمة المرور</h1>
+                <p class="subtitle" data-i18n="lgn.forgotDesc">أدخل بريدك الإلكتروني وسنرسل لك رابط الاستعادة</p>
+                <div class="login-error" id="forgotError"></div>
+                <div class="login-success" id="forgotSuccess"></div>
+                <form id="forgotForm">
+                    <div class="field">
+                        <label for="forgotEmail" data-i18n="email">البريد الإلكتروني</label>
+                        <div class="input-wrap">
+                            <input type="email" id="forgotEmail" placeholder="example@ndr.org" required>
+                            <svg class="f-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-primary" id="forgotBtn" data-i18n="lgn.send">إرسال رابط الاستعادة</button>
+                </form>
+                <a class="back-link" onclick="showStep('login')" data-i18n="lgn.backToLogin">العودة لتسجيل الدخول</a>
+            </div>
+
+            <!-- ============ STEP: reset (from email link) ============ -->
+            <div id="step-reset" style="display:none">
+                <h1 data-i18n="lgn.resetTitle">تعيين كلمة مرور جديدة</h1>
+                <p class="subtitle" data-i18n="lgn.changeDesc">لأسباب أمنية، يجب عليك تعيين كلمة مرور جديدة قبل المتابعة</p>
+                <div class="login-error" id="resetError"></div>
+                <div class="login-success" id="resetSuccess"></div>
+                <form id="resetForm">
+                    <div class="field">
+                        <label for="resetNew" data-i18n="lgn.newPassword">كلمة المرور الجديدة</label>
+                        <div class="input-wrap">
+                            <input type="password" id="resetNew" minlength="6" autocomplete="new-password" required>
+                            <svg class="f-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label for="resetConfirm" data-i18n="lgn.confirmPassword">تأكيد كلمة المرور</label>
+                        <div class="input-wrap">
+                            <input type="password" id="resetConfirm" minlength="6" autocomplete="new-password" required>
+                            <svg class="f-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-primary" id="resetBtn" data-i18n="lgn.resetBtn">حفظ كلمة المرور</button>
+                </form>
+                <a class="back-link" onclick="showStep('login')" data-i18n="lgn.backToLogin">العودة لتسجيل الدخول</a>
+            </div>
+
+            <!-- ============ STEP: change (must_change_password) ============ -->
+            <div id="step-change" style="display:none">
+                <h1 data-i18n="lgn.changeTitle">يجب تغيير كلمة المرور</h1>
+                <p class="subtitle" data-i18n="lgn.changeDesc">لأسباب أمنية، يجب عليك تعيين كلمة مرور جديدة قبل المتابعة</p>
+                <div class="login-error" id="changeError"></div>
+                <div class="login-success" id="changeSuccess"></div>
+                <form id="changeForm">
+                    <div class="field">
+                        <label for="changeCurrent" data-i18n="lgn.currentPassword">كلمة المرور الحالية</label>
+                        <div class="input-wrap">
+                            <input type="password" id="changeCurrent" autocomplete="current-password" required>
+                            <svg class="f-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label for="changeNew" data-i18n="lgn.newPassword">كلمة المرور الجديدة</label>
+                        <div class="input-wrap">
+                            <input type="password" id="changeNew" minlength="6" autocomplete="new-password" required>
+                            <svg class="f-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label for="changeConfirm" data-i18n="lgn.confirmPassword">تأكيد كلمة المرور</label>
+                        <div class="input-wrap">
+                            <input type="password" id="changeConfirm" minlength="6" autocomplete="new-password" required>
+                            <svg class="f-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-primary" id="changeBtn" data-i18n="lgn.changeBtn">تغيير كلمة المرور</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/i18n.js"></script>
+    <script src="js/api.js"></script>
+    <script>
+        const RESET_TOKEN = new URLSearchParams(window.location.search).get('reset');
+
+        function showStep(name) {
+            ['login', 'forgot', 'reset', 'change'].forEach(s => {
+                document.getElementById('step-' + s).style.display = s === name ? 'block' : 'none';
+            });
+            if (name === 'login') {
+                clearMsg('loginError');
+                clearMsg('loginSuccess');
+            }
+            if (name === 'forgot') {
+                clearMsg('forgotError');
+                clearMsg('forgotSuccess');
+            }
+            if (name === 'reset') {
+                clearMsg('resetError');
+                clearMsg('resetSuccess');
+            }
+            if (name === 'change') {
+                clearMsg('changeError');
+                clearMsg('changeSuccess');
+            }
+        }
+
+        function clearMsg(id) {
+            const el = document.getElementById(id);
+            el.classList.remove('show');
+        }
+
+        function showError(id, msg) {
+            const el = document.getElementById(id);
+            el.textContent = msg;
+            el.classList.add('show');
+        }
+
+        function showSuccess(id, msg) {
+            const el = document.getElementById(id);
+            el.textContent = msg;
+            el.classList.add('show');
+        }
+
+        function setBtn(id, loading) {
+            const btn = document.getElementById(id);
+            btn.disabled = loading;
+            const labelKey = btn.getAttribute('data-i18n');
+            btn.textContent = loading
+                ? (id === 'loginBtn' ? I18N.t('lgn.signingIn') : id === 'forgotBtn' ? I18N.t('lgn.sending') : btn.dataset.loadingLabel || btn.textContent)
+                : I18N.t(labelKey);
+        }
+
+        function redirectByRole(user) {
+            window.location.href = user.role === 'admin' ? '/admin.html' : '/user.html';
+        }
+
+        // Login
+        document.getElementById('loginForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            clearMsg('loginError');
+            clearMsg('loginSuccess');
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value;
+            if (!email || !password) {
+                showError('loginError', I18N.t('lgn.required'));
+                return;
+            }
+            setBtn('loginBtn', true);
+            try {
+                const user = await API.login(email, password);
+                if (user.mustChangePassword) {
+                    showStep('change');
+                    document.getElementById('changeCurrent').value = password;
+                } else {
+                    redirectByRole(user);
+                }
+            } catch (err) {
+                const msg = err.data && err.data.error
+                    ? err.data.error
+                    : (err.status === 401 ? I18N.t('err.invalidLogin') : I18N.t('lgn.genericErr'));
+                showError('loginError', msg);
+                setBtn('loginBtn', false);
+            }
+        });
+
+        // Forgot
+        document.getElementById('forgotForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            clearMsg('forgotError');
+            clearMsg('forgotSuccess');
+            const email = document.getElementById('forgotEmail').value.trim();
+            if (!email) {
+                showError('forgotError', I18N.t('lgn.required'));
+                return;
+            }
+            setBtn('forgotBtn', true);
+            try {
+                await API.request('/auth/forgot-password', 'POST', { email }, false);
+                showSuccess('forgotSuccess', I18N.t('lgn.resetSent'));
+                document.getElementById('forgotEmail').value = '';
+                setBtn('forgotBtn', false);
+            } catch (err) {
+                showError('forgotError', (err.data && err.data.error) || I18N.t('lgn.genericErr'));
+                setBtn('forgotBtn', false);
+            }
+        });
+
+        // Reset (from email)
+        if (RESET_TOKEN) {
+            showStep('reset');
+        }
+        document.getElementById('resetForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            clearMsg('resetError');
+            clearMsg('resetSuccess');
+            const p1 = document.getElementById('resetNew').value;
+            const p2 = document.getElementById('resetConfirm').value;
+            if (p1.length < 6) {
+                showError('resetError', I18N.t('lgn.pwdWeak'));
+                return;
+            }
+            if (p1 !== p2) {
+                showError('resetError', I18N.t('lgn.pwdMismatch'));
+                return;
+            }
+            setBtn('resetBtn', true);
+            try {
+                await API.request('/auth/reset-password', 'POST', { token: RESET_TOKEN, newPassword: p1 }, false);
+                showSuccess('resetSuccess', I18N.t('lgn.changedOk'));
+                document.getElementById('resetNew').value = '';
+                document.getElementById('resetConfirm').value = '';
+                setTimeout(() => {
+                    showStep('login');
+                    API.clearAuth();
+                }, 1500);
+                setBtn('resetBtn', false);
+            } catch (err) {
+                showError('resetError', (err.data && err.data.error) || I18N.t('lgn.genericErr'));
+                setBtn('resetBtn', false);
+            }
+        });
+
+        // Change (must_change_password on first login)
+        document.getElementById('changeForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            clearMsg('changeError');
+            clearMsg('changeSuccess');
+            const cur = document.getElementById('changeCurrent').value;
+            const p1 = document.getElementById('changeNew').value;
+            const p2 = document.getElementById('changeConfirm').value;
+            if (p1.length < 6) {
+                showError('changeError', I18N.t('lgn.pwdWeak'));
+                return;
+            }
+            if (p1 !== p2) {
+                showError('changeError', I18N.t('lgn.pwdMismatch'));
+                return;
+            }
+            setBtn('changeBtn', true);
+            try {
+                await API.request('/auth/change-password', 'POST', { currentPassword: cur, newPassword: p1 }, true);
+                const me = await API.getMe();
+                showSuccess('changeSuccess', I18N.t('lgn.changedOk'));
+                setTimeout(() => redirectByRole(me.user), 1200);
+            } catch (err) {
+                showError('changeError', (err.data && err.data.error) || I18N.t('lgn.genericErr'));
+                setBtn('changeBtn', false);
+            }
+        });
+
+        // Auto-login: if we already have a session, skip or force change
+        document.addEventListener('DOMContentLoaded', async function () {
+            if (RESET_TOKEN) return; // reset step takes priority
+            if (!API.getToken()) return;
+            try {
+                const me = await API.getMe();
+                if (me.user.mustChangePassword) {
+                    showStep('change');
+                } else {
+                    redirectByRole(me.user);
+                }
+            } catch (e) {
+                API.clearAuth();
+            }
+        });
+    </script>
+</body>
+</html>

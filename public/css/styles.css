@@ -356,6 +356,8 @@ body {
   padding: 20px;
   border-radius: 12px;
   text-align: center;
+  position: relative;
+  transition: all 0.3s ease;
 }
 .summary-card.green { background: linear-gradient(135deg, #22C55E, #16A34A); }
 .summary-card.blue { background: linear-gradient(135deg, #3B82F6, #2563EB); }
@@ -811,3 +813,151 @@ body {
 [dir="ltr"] .notif-badge { right: auto; left: -2px; }
 [dir="ltr"] .status-dot { margin-left: 0; margin-right: 5px; }
 [dir="ltr"] .form-label .required { margin-left: 0; margin-right: 4px; }
+
+/* ==================== User bar (landing) ==================== */
+
+.user-bar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: linear-gradient(135deg, var(--primary-dark), var(--primary-color));
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 20px;
+  flex-wrap: wrap;
+}
+.user-bar-info { display: flex; align-items: center; gap: 10px; font-size: 0.9rem; flex-wrap: wrap; }
+.user-bar-email { font-weight: 700; }
+.user-bar-role {
+  background: rgba(255,255,255,0.18);
+  border-radius: 12px;
+  padding: 3px 12px;
+  font-size: 0.8rem;
+}
+.user-bar-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.user-bar-link {
+  color: white;
+  text-decoration: none;
+  background: rgba(255,255,255,0.15);
+  border-radius: 8px;
+  padding: 7px 14px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: var(--transition);
+}
+.user-bar-link:hover { background: rgba(255,255,255,0.3); }
+.user-bar-logout {
+  background: rgba(220,38,38,0.85);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 7px 16px;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: var(--transition);
+}
+.user-bar-logout:hover { background: #B91C1C; }
+
+/* ==================== Clickable stat cards ==================== */
+
+.stat-card.clickable { cursor: pointer; }
+.stat-card.clickable .icon { position: relative; }
+.stat-card.clickable .hint {
+  position: absolute;
+  bottom: -2px;
+  inset-inline-end: -2px;
+  background: var(--primary-color);
+  color: white;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+}
+.summary-card.clickable { cursor: pointer; }
+.summary-card.clickable:hover { transform: translateY(-3px); }
+.summary-card.clickable::after {
+  content: '+';
+  position: absolute;
+  top: 8px;
+  inset-inline-end: 10px;
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.4);
+  color: white;
+  font-weight: 700;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ==================== Data list modal ==================== */
+
+.modal-list { list-style: none; }
+.modal-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  margin-bottom: 8px;
+  background: var(--bg-lavender);
+  flex-wrap: wrap;
+}
+.modal-list .item-name { display: flex; align-items: center; gap: 10px; font-weight: 600; min-width: 0; }
+.modal-list .item-sub { font-size: 0.78rem; color: var(--text-light); display: block; }
+.modal-list .dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+.modal-list .item-value { font-weight: 700; color: var(--primary-dark); text-align: end; }
+.modal-list .item-value small { display: block; color: var(--text-light); font-weight: 400; }
+.modal-empty { text-align: center; color: var(--text-light); padding: 30px 0; }
+
+/* ==================== Password prompt (share viewer) ==================== */
+
+.pwd-prompt { max-width: 380px; margin: 0 auto; text-align: center; padding: 30px 10px; }
+.pwd-prompt .pwd-icon {
+  width: 64px; height: 64px;
+  margin: 0 auto 16px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+  display: flex; align-items: center; justify-content: center;
+}
+.pwd-prompt .pwd-icon svg { width: 30px; height: 30px; color: white; }
+.pwd-prompt h3 { margin-bottom: 6px; color: var(--primary-dark); }
+.pwd-prompt p { color: var(--text-light); font-size: 0.9rem; margin-bottom: 18px; }
+.pwd-prompt input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 2px solid var(--border-color);
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 0.95rem;
+  margin-bottom: 14px;
+  text-align: center;
+}
+.pwd-prompt input:focus { border-color: var(--primary-color); outline: none; }
+
+/* ==================== Neutral share-unavailable screen ==================== */
+
+.shr-unavailable {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #F5F5F7;
+  color: #555;
+  font-family: inherit;
+  text-align: center;
+  padding: 20px;
+}
+.shr-unavailable h1 { font-size: 1.4rem; color: #777; font-weight: 600; margin-bottom: 6px; }
+.shr-unavailable p { font-size: 0.9rem; color: #999; }

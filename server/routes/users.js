@@ -30,13 +30,13 @@ router.post('/', asyncHandler(async (req, res) => {
 
   const hash = bcrypt.hashSync(password, 10);
   const result = await db.run(`
-    INSERT INTO users (email, password_hash, name, role, locality_id, active)
-    VALUES (?, ?, ?, ?, ?, 1)
+    INSERT INTO users (email, password_hash, name, role, locality_id, active, must_change_password)
+    VALUES (?, ?, ?, ?, ?, 1, 1)
   `, [email.toLowerCase(), hash, name, role === 'admin' ? 'admin' : 'user', localityId || null]);
 
   const user = await db.get('SELECT * FROM users WHERE id = ?', [result.lastInsertRowid]);
   await logActivity(req.user, 'إضافة مستخدم', 'user', user.id, `${name} (${email})`);
-  await createNotification(user.id, 'مرحباً بك 👋', 'تم إنشاء حسابك بنجاح. يمكنك الآن تسجيل الدخول وإدخال التقارير.', 'success');
+  await createNotification(user.id, 'مرحباً بك 👋', 'تم إنشاء حسابك بنجاح. ستحتاج إلى تغيير كلمة المرور عند أول تسجيل دخول.', 'success');
 
   res.status(201).json({ user: publicUser(user) });
 }));
@@ -59,6 +59,9 @@ router.put('/:id', asyncHandler(async (req, res) => {
   if (password) {
     sets.push('password_hash = ?');
     values.push(bcrypt.hashSync(password, 10));
+    sets.push('must_change_password = 1');
+    sets.push('failed_attempts = 0');
+    sets.push('locked_until = NULL');
   }
 
   if (sets.length === 0) {

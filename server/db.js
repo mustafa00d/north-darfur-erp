@@ -52,6 +52,9 @@ CREATE TABLE IF NOT EXISTS users (
   role TEXT NOT NULL DEFAULT 'user',
   locality_id INTEGER,
   active INTEGER DEFAULT 1,
+  failed_attempts INTEGER NOT NULL DEFAULT 0,
+  locked_until TEXT,
+  must_change_password INTEGER NOT NULL DEFAULT 0,
   created_at TEXT DEFAULT (${ts}),
   last_login TEXT
 );
@@ -135,7 +138,17 @@ CREATE TABLE IF NOT EXISTS share_links (
   created_at TEXT DEFAULT (${ts}),
   expires_at TEXT NOT NULL,
   permissions TEXT NOT NULL,
+  password_hash TEXT,
   view_count INTEGER DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS password_resets (
+  id ${pk},
+  user_id INTEGER NOT NULL,
+  token_hash TEXT NOT NULL,
+  expires_at TEXT NOT NULL,
+  used INTEGER DEFAULT 0,
+  created_at TEXT DEFAULT (${ts})
 );
 `.split(';\n\n').map(s => s.trim()).filter(Boolean);
 }
@@ -218,6 +231,41 @@ export function createSQLiteLayer(database) {
   return layer;
 }
 
+// ==================== Migration (add columns to existing DBs) ====================
+
+async function getColumns(layer, table) {
+  if (layer.isPG) {
+    const rows = await layer.all(
+      `SELECT column_name FROM information_schema.columns WHERE table_name = '${table}'`
+    );
+    return rows.map(r => r.column_name);
+  }
+  const rows = await layer.all(`PRAGMA table_info(${table})`);
+  return rows.map(r => r.name);
+}
+
+async function migrateColumns(layer) {
+  const migrations = {
+    users: [
+      ['failed_attempts', 'INTEGER NOT NULL DEFAULT 0'],
+      ['locked_until', 'TEXT'],
+      ['must_change_password', 'INTEGER NOT NULL DEFAULT 0']
+    ],
+    share_links: [
+      ['password_hash', 'TEXT']
+    ]
+  };
+  for (const [table, cols] of Object.entries(migrations)) {
+    let existing = [];
+    try { existing = await getColumns(layer, table); } catch { continue; }
+    for (const [name, def] of cols) {
+      if (!existing.includes(name)) {
+        await layer.exec(`ALTER TABLE ${table} ADD COLUMN ${name} ${def}`);
+      }
+    }
+  }
+}
+
 // ==================== Module-level DB (auto-selected) ====================
 
 const DATABASE_URL = process.env.DATABASE_URL;
@@ -243,6 +291,7 @@ export async function init() {
     for (const stmt of buildSchemaStatements('pg')) {
       await db.exec(stmt);
     }
+    await migrateColumns(db);
   } else {
     const dataDir = path.join(__dirname, '..', 'data');
     if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
@@ -254,6 +303,7 @@ export async function init() {
     for (const stmt of buildSchemaStatements('sqlite')) {
       db.exec(stmt);
     }
+    await migrateColumns(db);
   }
   await seedData(db);
   return db;

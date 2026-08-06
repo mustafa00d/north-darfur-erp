@@ -28,7 +28,6 @@
         .hero-content { position: relative; z-index: 1; max-width: 800px; margin: 0 auto; }
         .hero h1 { font-size: 2.1rem; margin-bottom: 10px; line-height: 1.4; }
         .hero h2 { font-size: 1.3rem; font-weight: 400; opacity: 0.9; margin-bottom: 15px; }
-        .hero p { font-size: 1rem; opacity: 0.8; max-width: 600px; margin: 0 auto; }
         .quick-stats {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
@@ -122,6 +121,19 @@
 <body>
     <button class="lang-toggle" data-i18n-toggle onclick="I18N.toggle()">English</button>
     <div class="main-container">
+        <!-- User bar -->
+        <div class="user-bar" id="userBar" style="display:none">
+            <div class="user-bar-info">
+                <span class="user-bar-email" id="userEmail"></span>
+                <span class="user-bar-role" id="userRole"></span>
+            </div>
+            <div class="user-bar-actions">
+                <a href="user.html" class="user-bar-link" data-i18n="idx.action.data.title">إدخال البيانات</a>
+                <a href="admin.html" class="user-bar-link" id="linkAdmin" style="display:none" data-i18n="idx.action.admin.title">لوحة الإدارة</a>
+                <button class="user-bar-logout" onclick="doLogout()" data-i18n="logout">تسجيل الخروج</button>
+            </div>
+        </div>
+
         <!-- Hero -->
         <div class="hero">
             <div class="hero-content">
@@ -130,49 +142,54 @@
             </div>
         </div>
 
-        <!-- Quick Stats -->
+        <!-- Quick Stats (clickable) -->
         <div class="quick-stats">
-            <div class="stat-card reports">
+            <div class="stat-card reports clickable" data-i18n-title="dlg.clickHint" onclick="openStat('reports')">
                 <div class="icon">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
                     </svg>
+                    <span class="hint">+</span>
                 </div>
                 <div class="stat-number" id="statReports">0</div>
                 <div class="stat-label" data-i18n="idx.stat.reports">إجمالي التقارير</div>
             </div>
-            <div class="stat-card localities">
+            <div class="stat-card localities clickable" data-i18n-title="dlg.clickHint" onclick="openStat('localities')">
                 <div class="icon">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
                     </svg>
+                    <span class="hint">+</span>
                 </div>
                 <div class="stat-number" id="statLocalities">0</div>
                 <div class="stat-label" data-i18n="idx.stat.localities">المحليات</div>
             </div>
-            <div class="stat-card donors">
+            <div class="stat-card donors clickable" data-i18n-title="dlg.clickHint" onclick="openStat('donors')">
                 <div class="icon">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
                     </svg>
+                    <span class="hint">+</span>
                 </div>
                 <div class="stat-number" id="statDonors">0</div>
                 <div class="stat-label" data-i18n="idx.stat.donors">المانحين</div>
             </div>
-            <div class="stat-card amount">
+            <div class="stat-card amount clickable" data-i18n-title="dlg.clickHint" onclick="openStat('amounts')">
                 <div class="icon">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/>
                     </svg>
+                    <span class="hint">+</span>
                 </div>
                 <div class="stat-number" id="statAmount">0</div>
                 <div class="stat-label" data-i18n="idx.stat.amount">إجمالي المبالغ (جنيه)</div>
             </div>
-            <div class="stat-card beneficiaries">
+            <div class="stat-card beneficiaries clickable" data-i18n-title="dlg.clickHint" onclick="openStat('beneficiaries')">
                 <div class="icon">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
                     </svg>
+                    <span class="hint">+</span>
                 </div>
                 <div class="stat-number" id="statBeneficiaries">0</div>
                 <div class="stat-label" data-i18n="idx.stat.beneficiaries">إجمالي المستفيدين</div>
@@ -192,7 +209,7 @@
                     <p data-i18n="idx.action.data.desc">تسجيل تقارير جديدة</p>
                 </div>
             </a>
-            <a href="admin.html" class="action-btn admin">
+            <a href="admin.html" class="action-btn admin" id="actionAdmin">
                 <div class="icon">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
@@ -246,10 +263,31 @@
         </footer>
     </div>
 
+    <!-- Data modal -->
+    <div class="modal" id="dataModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="dataModalTitle"></h3>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p class="modal-subtitle" id="dataModalSub" style="color:var(--text-light);font-size:.9rem;margin-bottom:14px;"></p>
+                <ul class="modal-list" id="dataModalList"></ul>
+            </div>
+        </div>
+    </div>
+
     <script src="js/i18n.js"></script>
     <script src="js/api.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', async function() {
+        let currentUser = null;
+
+        function doLogout() {
+            API.clearAuth();
+            window.location.href = '/';
+        }
+
+        async function loadSummary() {
             try {
                 const s = await API.getSummary();
                 document.getElementById('statReports').textContent = formatNumber(s.totalReports);
@@ -260,6 +298,118 @@
             } catch (e) {
                 console.error('Failed to load summary', e);
             }
+        }
+
+        function showModal(titleKey, subKey, renderFn) {
+            document.getElementById('dataModalTitle').textContent = I18N.t(titleKey);
+            document.getElementById('dataModalSub').textContent = I18N.t(subKey);
+            document.getElementById('dataModalList').innerHTML = renderFn();
+            document.getElementById('dataModal').classList.add('show');
+        }
+
+        function closeModal() {
+            document.getElementById('dataModal').classList.remove('show');
+        }
+
+        function openStat(kind) {
+            const ar = I18N.getLang() === 'ar';
+            const esc = escapeHtml;
+            const api = API.request;
+
+            if (kind === 'reports') {
+                api('/reports').then(reports => {
+                    showModal('dlg.reports', 'dlg.reportsSub', () => {
+                        if (!reports.length) return `<li class="modal-empty">${I18N.t('dlg.empty')}</li>`;
+                        return reports.slice(0, 20).map(r => `
+                            <li>
+                                <span class="item-name">
+                                    <span class="dot" style="background:${esc(r.localityColor) || '#6B2D5B'}"></span>
+                                    <span>${esc(r.errName)}<small class="item-sub">${esc(pickLocality(r))} · ${esc(r.donorName)}</small></span>
+                                </span>
+                                <span class="item-value">${statusBadge(r.status)}</span>
+                            </li>`).join('');
+                    });
+                }).catch(() => showToast(I18N.t('lgn.genericErr'), 'error'));
+            } else if (kind === 'localities' || kind === 'amounts' || kind === 'beneficiaries') {
+                api('/analytics/stats').then(stats => {
+                    const list = stats.localityStats.slice().sort((a, b) => b.count - a.count);
+                    if (kind === 'localities') {
+                        showModal('dlg.localities', 'dlg.localitiesSub', () => {
+                            if (!list.some(x => x.count)) return `<li class="modal-empty">${I18N.t('dlg.empty')}</li>`;
+                            return list.filter(x => x.count).map(l => `
+                                <li>
+                                    <span class="item-name"><span class="dot" style="background:${esc(l.color)}"></span>${esc(ar ? l.nameAr : l.nameEn)}</span>
+                                    <span class="item-value">${formatNumber(l.count)}<small>${I18N.t('dlg.reportCount')}</small></span>
+                                </li>`).join('');
+                        });
+                    } else if (kind === 'amounts') {
+                        showModal('dlg.amounts', 'dlg.amountsSub', () => {
+                            if (!list.some(x => x.totalAmount)) return `<li class="modal-empty">${I18N.t('dlg.empty')}</li>`;
+                            return list.filter(x => x.totalAmount).sort((a, b) => b.totalAmount - a.totalAmount).map(l => `
+                                <li>
+                                    <span class="item-name"><span class="dot" style="background:${esc(l.color)}"></span>${esc(ar ? l.nameAr : l.nameEn)}</span>
+                                    <span class="item-value">${formatNumber(l.totalAmount)}<small>${I18N.t('dlg.amount')}</small></span>
+                                </li>`).join('');
+                        });
+                    } else {
+                        showModal('dlg.ben', 'dlg.benSub', () => {
+                            if (!list.some(x => x.totalBeneficiaries)) return `<li class="modal-empty">${I18N.t('dlg.empty')}</li>`;
+                            return list.filter(x => x.totalBeneficiaries).sort((a, b) => b.totalBeneficiaries - a.totalBeneficiaries).map(l => `
+                                <li>
+                                    <span class="item-name"><span class="dot" style="background:${esc(l.color)}"></span>${esc(ar ? l.nameAr : l.nameEn)}</span>
+                                    <span class="item-value">${formatNumber(l.totalBeneficiaries)}<small>${I18N.t('dlg.beneficiaries')}</small></span>
+                                </li>`).join('');
+                        });
+                    }
+                }).catch(() => showToast(I18N.t('lgn.genericErr'), 'error'));
+            } else if (kind === 'donors') {
+                api('/analytics/stats').then(stats => {
+                    const list = stats.donorStats.slice().sort((a, b) => b.count - a.count);
+                    showModal('dlg.donors', 'dlg.donorsSub', () => {
+                        if (!list.some(x => x.count)) return `<li class="modal-empty">${I18N.t('dlg.empty')}</li>`;
+                        return list.filter(x => x.count).map(d => `
+                            <li>
+                                <span class="item-name"><span class="dot" style="background:${esc(d.color)}"></span>${esc(d.name)}</span>
+                                <span class="item-value">${formatNumber(d.count)}<small>${I18N.t('dlg.reportCount')}</small></span>
+                            </li>`).join('');
+                    });
+                }).catch(() => showToast(I18N.t('lgn.genericErr'), 'error'));
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', async function () {
+            I18N.onLangChange(() => {
+                const t = document.getElementById('dataModalTitle');
+                if (t.textContent) { closeModal(); }
+            });
+
+            // Auth gate
+            if (!API.getToken()) {
+                window.location.href = '/';
+                return;
+            }
+            try {
+                const me = await API.getMe();
+                currentUser = me.user;
+                if (currentUser.mustChangePassword) {
+                    window.location.href = '/';
+                    return;
+                }
+                document.getElementById('userBar').style.display = 'flex';
+                document.getElementById('userEmail').textContent = currentUser.email;
+                document.getElementById('userRole').textContent = currentUser.role === 'admin' ? I18N.t('adm.users.roleAdmin') : I18N.t('adm.users.roleUser');
+                if (currentUser.role === 'admin') {
+                    document.getElementById('linkAdmin').style.display = '';
+                }
+            } catch (e) {
+                window.location.href = '/';
+                return;
+            }
+            loadSummary();
+        });
+
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') closeModal();
         });
     </script>
 </body>

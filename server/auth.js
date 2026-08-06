@@ -20,6 +20,9 @@ export function publicUser(row) {
     role: row.role,
     localityId: row.locality_id,
     active: !!row.active,
+    failedAttempts: row.failed_attempts || 0,
+    lockedUntil: row.locked_until || null,
+    mustChangePassword: !!row.must_change_password,
     createdAt: row.created_at,
     lastLogin: row.last_login
   };

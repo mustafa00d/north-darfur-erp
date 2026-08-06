@@ -150,6 +150,34 @@
                 </div>
             </form>
 
+            <!-- My Stats -->
+            <div class="card" style="margin:20px 0;">
+                <h3 style="color:var(--primary-dark);margin-bottom:15px;display:flex;align-items:center;gap:10px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="22" height="22" style="color:var(--primary-color);">
+                        <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/>
+                    </svg>
+                    <span data-i18n="usr.stats.title">نظرة سريعة على تقاريري</span>
+                </h3>
+                <div class="summary-cards" style="padding:0;">
+                    <div class="summary-card">
+                        <div class="summary-number" id="myStatReports">0</div>
+                        <div class="summary-label" data-i18n="usr.stats.myReports">عدد تقاريري</div>
+                    </div>
+                    <div class="summary-card green">
+                        <div class="summary-number" id="myStatAmount">0</div>
+                        <div class="summary-label" data-i18n="usr.stats.myAmount">إجمالي مبالغي</div>
+                    </div>
+                    <div class="summary-card blue">
+                        <div class="summary-number" id="myStatBen">0</div>
+                        <div class="summary-label" data-i18n="usr.stats.myBen">إجمالي مستفيديني</div>
+                    </div>
+                    <div class="summary-card orange">
+                        <div class="summary-number" id="myStatPending">0</div>
+                        <div class="summary-label" data-i18n="usr.stats.myPending">قيد المراجعة</div>
+                    </div>
+                </div>
+            </div>
+
             <!-- My Submissions -->
             <div class="card" style="margin:20px 0;">
                 <h3 style="color:var(--primary-dark);margin-bottom:15px;display:flex;align-items:center;gap:10px;">
@@ -194,6 +222,10 @@
         let currentUser = null;
 
         document.addEventListener('DOMContentLoaded', async function() {
+            if (!API.getToken()) {
+                window.location.href = '/';
+                return;
+            }
             const user = API.getCurrentUser();
             if (user && API.getToken()) {
                 currentUser = user;
@@ -201,6 +233,10 @@
                     const me = await API.request('/auth/me');
                     currentUser = me.user;
                     API.setAuth(API.getToken(), me.user);
+                    if (currentUser.mustChangePassword) {
+                        window.location.href = '/';
+                        return;
+                    }
                     showFormPage();
                 } catch (e) {
                     await doLogout();
@@ -215,8 +251,13 @@
             const password = document.getElementById('loginPassword').value;
             try {
                 currentUser = await API.login(email, password);
+                if (currentUser.mustChangePassword) {
+                    window.location.href = '/';
+                    return;
+                }
                 showFormPage();
             } catch (err) {
+                document.getElementById('loginError').textContent = (err.data && err.data.error) || I18N.t('err.invalidLogin');
                 document.getElementById('loginError').classList.add('show');
             }
         });
@@ -226,9 +267,23 @@
             document.getElementById('formPage').style.display = 'block';
             document.getElementById('displayEmail').textContent = currentUser.name + ' - ' + currentUser.email;
             await initForm();
+            loadMyStats();
             loadMyReports();
             loadNotifications();
             setInterval(loadNotifications, 60000);
+        }
+
+        async function loadMyStats() {
+            try {
+                const reports = await API.request('/reports');
+                const totalAmount = reports.reduce((s, r) => s + (Number(r.amountReceived) || 0), 0);
+                const totalBen = reports.reduce((s, r) => s + (Number(r.beneficiariesTotal) || 0), 0);
+                const pending = reports.filter(r => r.status === 'submitted').length;
+                document.getElementById('myStatReports').textContent = formatNumber(reports.length);
+                document.getElementById('myStatAmount').textContent = formatNumber(totalAmount);
+                document.getElementById('myStatBen').textContent = formatNumber(totalBen);
+                document.getElementById('myStatPending').textContent = formatNumber(pending);
+            } catch (e) { /* ignore */ }
         }
 
         async function initForm() {

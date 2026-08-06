@@ -104,19 +104,19 @@
 
             <!-- Summary Cards -->
             <div class="summary-cards" style="padding-top:20px;">
-                <div class="summary-card">
+                <div class="summary-card clickable" data-i18n-title="dlg.clickHint" onclick="openDashStat('reports')">
                     <div class="summary-number" id="dashTotalReports">0</div>
                     <div class="summary-label" data-i18n="adm.sum.reports">إجمالي التقارير</div>
                 </div>
-                <div class="summary-card green">
+                <div class="summary-card green clickable" data-i18n-title="dlg.clickHint" onclick="openDashStat('amounts')">
                     <div class="summary-number" id="dashTotalAmount">0</div>
                     <div class="summary-label" data-i18n="adm.sum.amount">المبالغ (جنيه)</div>
                 </div>
-                <div class="summary-card blue">
+                <div class="summary-card blue clickable" data-i18n-title="dlg.clickHint" onclick="openDashStat('beneficiaries')">
                     <div class="summary-number" id="dashTotalBeneficiaries">0</div>
                     <div class="summary-label" data-i18n="adm.sum.ben">المستفيدين</div>
                 </div>
-                <div class="summary-card orange">
+                <div class="summary-card orange clickable" data-i18n-title="dlg.clickHint" onclick="openDashStat('pending')">
                     <div class="summary-number" id="dashPending">0</div>
                     <div class="summary-label" data-i18n="adm.sum.pending">قيد المراجعة</div>
                 </div>
@@ -370,6 +370,10 @@
                                 <label class="share-option"><input type="checkbox" id="shareUsers"> <span data-i18n="adm.share.users">المستخدمين</span></label>
                             </div>
                         </div>
+                        <div style="margin-bottom:15px;">
+                            <label style="font-size:0.9rem;display:block;margin-bottom:5px;" data-i18n="adm.share.password">حماية بكلمة مرور (اختياري)</label>
+                            <input type="text" id="sharePassword" data-i18n-ph="adm.share.passwordPh" placeholder="اتركه فارغاً بدون حماية" style="width:100%;padding:10px;border:none;border-radius:8px;font-family:inherit;">
+                        </div>
                         <button onclick="generateShareLink()" class="backup-btn create">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/></svg>
                             <span data-i18n="adm.share.create">إنشاء رابط مشاركة</span>
@@ -413,6 +417,20 @@
         </div>
     </div>
 
+    <!-- Dashboard Data Modal -->
+    <div class="modal" id="dashModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="dashModalTitle"></h3>
+                <button class="modal-close" onclick="closeDashModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p class="modal-subtitle" id="dashModalSub" style="color:var(--text-light);font-size:.9rem;margin-bottom:14px;"></p>
+                <ul class="modal-list" id="dashModalList"></ul>
+            </div>
+        </div>
+    </div>
+
     <script src="js/i18n.js"></script>
     <script src="js/api.js"></script>
     <script>
@@ -429,12 +447,20 @@
                 showShareView(shareToken);
                 return;
             }
+            if (!API.getToken()) {
+                window.location.href = '/';
+                return;
+            }
             const user = API.getCurrentUser();
             if (user && API.getToken()) {
                 try {
                     const me = await API.request('/auth/me');
                     currentUser = me.user;
                     API.setAuth(API.getToken(), me.user);
+                    if (currentUser.mustChangePassword) {
+                        window.location.href = '/';
+                        return;
+                    }
                     if (currentUser.role === 'admin') {
                         showDashboard();
                     } else {
@@ -450,6 +476,10 @@
             document.getElementById('loginError').classList.remove('show');
             try {
                 const user = await API.login(document.getElementById('adminEmail').value, document.getElementById('adminPassword').value);
+                if (user.mustChangePassword) {
+                    window.location.href = '/';
+                    return;
+                }
                 if (user.role !== 'admin') {
                     API.clearAuth();
                     document.getElementById('loginError').textContent = I18N.t('err.notAdmin');
@@ -459,6 +489,8 @@
                 currentUser = user;
                 showDashboard();
             } catch (err) {
+                const msg = err.data && err.data.error ? err.data.error : I18N.t('err.invalidLogin');
+                document.getElementById('loginError').textContent = msg;
                 document.getElementById('loginError').classList.add('show');
             }
         });
@@ -475,7 +507,7 @@
 
         async function doLogout() {
             await API.logout();
-            window.location.href = '/admin.html';
+            window.location.href = '/';
         }
 
         // ==================== Dashboard ====================
@@ -507,6 +539,80 @@
             document.getElementById('dashPending').textContent = formatNumber(pending);
 
             initCharts(stats);
+        }
+
+        // ==================== Dashboard stat modals ====================
+
+        function openDashModal(titleKey, subKey, html) {
+            document.getElementById('dashModalTitle').textContent = I18N.t(titleKey);
+            document.getElementById('dashModalSub').textContent = I18N.t(subKey);
+            document.getElementById('dashModalList').innerHTML = html;
+            document.getElementById('dashModal').classList.add('show');
+        }
+
+        function closeDashModal() {
+            document.getElementById('dashModal').classList.remove('show');
+        }
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') closeDashModal();
+        });
+
+        async function openDashStat(kind) {
+            const ar = I18N.getLang() === 'ar';
+            try {
+                const reports = await API.request('/reports');
+                if (kind === 'pending') {
+                    const pending = reports.filter(r => r.status === 'submitted');
+                    openDashModal('dlg.pending', 'dlg.pending', () => {
+                        if (!pending.length) return `<li class="modal-empty">${I18N.t('dlg.empty')}</li>`;
+                        return pending.slice(0, 20).map(r => `
+                            <li>
+                                <span class="item-name"><span class="dot" style="background:${escapeHtml(r.localityColor) || '#6B2D5B'}"></span>
+                                    <span>${escapeHtml(r.errName)}<small class="item-sub">${escapeHtml(pickLocality(r))} · ${escapeHtml(r.donorName)}</small></span></span>
+                                <span class="item-value">${formatDate(r.createdAt)}</span>
+                            </li>`).join('');
+                    });
+                    return;
+                }
+                if (kind === 'reports') {
+                    openDashModal('dlg.reports', 'dlg.reportsSub', () => {
+                        if (!reports.length) return `<li class="modal-empty">${I18N.t('dlg.empty')}</li>`;
+                        return reports.slice(0, 20).map(r => `
+                            <li>
+                                <span class="item-name"><span class="dot" style="background:${escapeHtml(r.localityColor) || '#6B2D5B'}"></span>
+                                    <span>${escapeHtml(r.errName)}<small class="item-sub">${escapeHtml(pickLocality(r))} · ${escapeHtml(r.donorName)}</small></span></span>
+                                <span class="item-value">${statusBadge(r.status)}</span>
+                            </li>`).join('');
+                    });
+                    return;
+                }
+
+                const stats = await API.request('/analytics/stats');
+                const list = stats.localityStats.slice();
+                if (kind === 'amounts') {
+                    openDashModal('dlg.amounts', 'dlg.amountsSub', () => {
+                        const items = list.filter(x => x.totalAmount).sort((a, b) => b.totalAmount - a.totalAmount);
+                        if (!items.length) return `<li class="modal-empty">${I18N.t('dlg.empty')}</li>`;
+                        return items.map(l => `
+                            <li>
+                                <span class="item-name"><span class="dot" style="background:${escapeHtml(l.color)}"></span>${escapeHtml(ar ? l.nameAr : l.nameEn)}</span>
+                                <span class="item-value">${formatNumber(l.totalAmount)}<small>${I18N.t('dlg.amount')}</small></span>
+                            </li>`).join('');
+                    });
+                } else {
+                    openDashModal('dlg.ben', 'dlg.benSub', () => {
+                        const items = list.filter(x => x.totalBeneficiaries).sort((a, b) => b.totalBeneficiaries - a.totalBeneficiaries);
+                        if (!items.length) return `<li class="modal-empty">${I18N.t('dlg.empty')}</li>`;
+                        return items.map(l => `
+                            <li>
+                                <span class="item-name"><span class="dot" style="background:${escapeHtml(l.color)}"></span>${escapeHtml(ar ? l.nameAr : l.nameEn)}</span>
+                                <span class="item-value">${formatNumber(l.totalBeneficiaries)}<small>${I18N.t('dlg.beneficiaries')}</small></span>
+                            </li>`).join('');
+                    });
+                }
+            } catch (e) {
+                showToast(I18N.t('lgn.genericErr'), 'error');
+            }
         }
 
         // ==================== Tabs ====================
@@ -951,10 +1057,12 @@
                 const link = await API.request('/share', 'POST', {
                     name: document.getElementById('shareName').value,
                     expiryHours: document.getElementById('shareExpiry').value,
-                    shareReports, shareAnalytics, shareUsers
+                    shareReports, shareAnalytics, shareUsers,
+                    password: document.getElementById('sharePassword').value || undefined
                 });
                 navigator.clipboard.writeText(link.url).then(() => showToast(I18N.t('adm.share.linkCopied')));
                 document.getElementById('shareName').value = '';
+                document.getElementById('sharePassword').value = '';
                 loadShareLinks();
             } catch (e) { showToast(e.message, 'error'); }
         }
@@ -976,7 +1084,7 @@
                             return `
                             <div class="active-share-link">
                                 <div>
-                                    <strong>${escapeHtml(l.name)}</strong>
+                                    <strong>${escapeHtml(l.name)} ${l.hasPassword ? '<span style="background:rgba(245,158,11,0.25);color:#FBBF24;font-size:0.75rem;padding:2px 8px;border-radius:8px;">🔒 ' + I18N.t('adm.share.hasPwd') + '</span>' : ''}</strong>
                                     <div style="font-size:0.8rem;opacity:0.85;">${perms.join(' • ')} | ${I18N.t('adm.share.expires')}: ${formatDateTime(l.expiresAt)} | ${I18N.t('adm.share.views')}: ${l.viewCount}</div>
                                 </div>
                                 <div style="display:flex;gap:8px;">
@@ -1006,6 +1114,96 @@
 
         // ==================== Share View (public) ====================
 
+        function renderShareUnavailable() {
+            document.body.innerHTML = `
+                <div class="shr-unavailable">
+                    <div>
+                        <h1>${I18N.t('shr.unavailable')}</h1>
+                        <p>${I18N.t('shr.unavailableDesc')}</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderSharePasswordPrompt(token) {
+            const dash = document.getElementById('dashboardSection');
+            const wrap = document.createElement('div');
+            wrap.id = 'sharePromptWrap';
+            wrap.className = 'pwd-prompt';
+            wrap.innerHTML = `
+                <div class="pwd-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                </div>
+                <h3>${I18N.t('shr.passwordTitle')}</h3>
+                <p>${I18N.t('shr.passwordLabel')}</p>
+                <input type="password" id="sharePwdInput" placeholder="${I18N.t('shr.passwordPh')}" autocomplete="off">
+                <button class="btn btn-primary" id="sharePwdBtn" onclick="unlockShare('${token}')" style="width:100%;justify-content:center;">${I18N.t('shr.passwordBtn')}</button>
+            `;
+            const anchor = document.querySelector('.dashboard-actions');
+            if (anchor) anchor.insertAdjacentElement('afterend', wrap);
+            const input = document.getElementById('sharePwdInput');
+            if (input) input.focus();
+        }
+
+        async function unlockShare(token) {
+            const btn = document.getElementById('sharePwdBtn');
+            const input = document.getElementById('sharePwdInput');
+            if (!input || !input.value) return;
+            btn.disabled = true;
+            try {
+                const data = await API.shareAuth(token, input.value);
+                renderShareContent(data);
+            } catch (e) {
+                btn.disabled = false;
+                showToast((e.data && e.data.error) || I18N.t('shr.wrongPassword'), 'error');
+            }
+        }
+
+        function renderShareContent(data) {
+            const dash = document.getElementById('dashboardSection');
+            const wrap = document.getElementById('sharePromptWrap');
+            if (wrap) wrap.remove();
+            const oldSummary = document.getElementById('shareSummaryWrap');
+            if (oldSummary) oldSummary.remove();
+
+            document.querySelector('.dashboard-title p').textContent = data.link.name;
+            if (data.permissions.analytics) {
+                const summaryHtml = `
+                    <div class="summary-cards" id="shareSummaryWrap" style="padding-top:20px;">
+                        <div class="summary-card"><div class="summary-number">${formatNumber(data.summary)}</div><div class="summary-label">${I18N.t('adm.shareview.approvedReports')}</div></div>
+                        <div class="summary-card green"><div class="summary-number">${formatNumber(data.totalAmount)}</div><div class="summary-label">${I18N.t('adm.shareview.totalAmount')}</div></div>
+                        <div class="summary-card blue"><div class="summary-number">${formatNumber(data.totalBeneficiaries)}</div><div class="summary-label">${I18N.t('adm.shareview.totalBen')}</div></div>
+                    </div>
+                `;
+                dash.insertAdjacentHTML('afterbegin', summaryHtml);
+            }
+
+            if (data.permissions.reports) {
+                document.getElementById('reportsTab').classList.add('active');
+                if (data.reports.length) {
+                    document.getElementById('reportsTableBody').innerHTML = data.reports.map(r => `
+                        <tr>
+                            <td>${formatDate(r.created_at)}</td>
+                            <td><strong>${escapeHtml(r.err_name)}</strong></td>
+                            <td>${escapeHtml(I18N.pick(r.locality_ar, r.locality_en))}</td>
+                            <td>${escapeHtml(r.donor_name)}</td>
+                            <td>${escapeHtml(I18N.pick(r.support_ar, r.support_en))}</td>
+                            <td>${formatNumber(r.amount_received)}</td>
+                            <td>${formatNumber(r.beneficiaries_total)}</td>
+                            <td>${statusBadge('approved')}</td>
+                            <td>-</td>
+                        </tr>
+                    `).join('');
+                }
+            }
+            if (data.permissions.users && data.users) {
+                document.getElementById('usersTab').classList.add('active');
+                document.getElementById('usersTableBody').innerHTML = data.users.map(u => `
+                    <tr><td>${escapeHtml(u.name)}</td><td>${escapeHtml(u.email)}</td><td>-</td><td>-</td><td>-</td><td>-</td><td><span class="status-dot on"></span>${I18N.t('adm.shareview.active')}</td><td>-</td></tr>
+                `).join('');
+            }
+        }
+
         async function showShareView(token) {
             document.getElementById('loginSection').style.display = 'none';
             document.getElementById('dashboardSection').style.display = 'block';
@@ -1013,58 +1211,25 @@
             document.querySelectorAll('.tab-btn').forEach(b => b.style.display = 'none');
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
 
+            // واجهة نظيفة ومستقلة: إخفاء روابط الموقع والفوتر
+            const backLink = document.querySelector('.back-link');
+            if (backLink) backLink.style.display = 'none';
+            const footer = document.querySelector('.footer');
+            if (footer) footer.style.display = 'none';
+
+            document.querySelector('.dashboard-title h2').innerHTML = I18N.t('shr.title');
+            document.querySelector('.dashboard-title p').textContent = '';
+            document.querySelector('.dashboard-actions').style.display = 'none';
+
             try {
                 const data = await API.getShareData(token);
-                document.querySelector('.dashboard-title h2').innerHTML = I18N.t('adm.shareview.title');
-                document.querySelector('.dashboard-title p').textContent = data.link.name;
-                document.querySelector('.dashboard-actions').style.display = 'none';
-
-                if (data.permissions.analytics) {
-                    const summaryHtml = `
-                        <div class="summary-cards" style="padding-top:20px;">
-                            <div class="summary-card"><div class="summary-number">${formatNumber(data.summary)}</div><div class="summary-label">${I18N.t('adm.shareview.approvedReports')}</div></div>
-                            <div class="summary-card green"><div class="summary-number">${formatNumber(data.totalAmount)}</div><div class="summary-label">${I18N.t('adm.shareview.totalAmount')}</div></div>
-                            <div class="summary-card blue"><div class="summary-number">${formatNumber(data.totalBeneficiaries)}</div><div class="summary-label">${I18N.t('adm.shareview.totalBen')}</div></div>
-                        </div>
-                    `;
-                    document.getElementById('dashboardSection').insertAdjacentHTML('afterbegin', summaryHtml);
+                if (data.requiresPassword) {
+                    renderSharePasswordPrompt(token);
+                    return;
                 }
-
-                if (data.permissions.reports) {
-                    document.getElementById('reportsTab').classList.add('active');
-                    if (data.reports.length) {
-                        document.getElementById('reportsTableBody').innerHTML = data.reports.map(r => `
-                            <tr>
-                                <td>${formatDate(r.created_at)}</td>
-                                <td><strong>${escapeHtml(r.err_name)}</strong></td>
-                                <td>${escapeHtml(I18N.pick(r.locality_ar, r.locality_en))}</td>
-                                <td>${escapeHtml(r.donor_name)}</td>
-                                <td>${escapeHtml(I18N.pick(r.support_ar, r.support_en))}</td>
-                                <td>${formatNumber(r.amount_received)}</td>
-                                <td>${formatNumber(r.beneficiaries_total)}</td>
-                                <td>${statusBadge('approved')}</td>
-                                <td>-</td>
-                            </tr>
-                        `).join('');
-                    }
-                }
-                if (data.permissions.users && data.users) {
-                    document.getElementById('usersTab').classList.add('active');
-                    document.getElementById('usersTableBody').innerHTML = data.users.map(u => `
-                        <tr><td>${escapeHtml(u.name)}</td><td>${escapeHtml(u.email)}</td><td>-</td><td>-</td><td>-</td><td>-</td><td><span class="status-dot on"></span>${I18N.t('adm.shareview.active')}</td><td>-</td></tr>
-                    `).join('');
-                }
+                renderShareContent(data);
             } catch (e) {
-                document.getElementById('dashboardSection').innerHTML = `
-                    <div class="login-container" style="min-height:60vh;align-items:center;">
-                        <div class="login-card" style="text-align:center;">
-                            <div style="font-size:3rem;margin-bottom:15px;">⚠️</div>
-                            <h2 style="color:var(--danger-color);margin-bottom:10px;">${I18N.t('adm.shareview.invalid')}</h2>
-                            <p style="color:var(--text-light);margin-bottom:20px;">${escapeHtml(e.message)}</p>
-                            <a href="admin.html" class="btn btn-primary" style="text-decoration:none;">${I18N.t('adm.shareview.back')}</a>
-                        </div>
-                    </div>
-                `;
+                renderShareUnavailable();
             }
         }
 
