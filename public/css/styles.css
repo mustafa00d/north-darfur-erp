@@ -362,6 +362,7 @@ body {
 .summary-card.green { background: linear-gradient(135deg, #22C55E, #16A34A); }
 .summary-card.blue { background: linear-gradient(135deg, #3B82F6, #2563EB); }
 .summary-card.orange { background: linear-gradient(135deg, #F97316, #EA580C); }
+.summary-card.red { background: linear-gradient(135deg, #EF4444, #DC2626); }
 .summary-number { font-size: 1.8rem; font-weight: 700; }
 .summary-label { font-size: 0.85rem; opacity: 0.9; }
 

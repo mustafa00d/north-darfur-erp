@@ -45,9 +45,13 @@ async function buildShareData(row) {
     const c = await db.get("SELECT COUNT(*) AS c FROM reports WHERE status = 'approved'");
     const a = await db.get("SELECT COALESCE(SUM(amount_received), 0) AS s FROM reports WHERE status = 'approved'");
     const b = await db.get("SELECT COALESCE(SUM(beneficiaries_total), 0) AS s FROM reports WHERE status = 'approved'");
+    const g = await db.get(`SELECT COALESCE(SUM(beneficiaries_male), 0) AS m, COALESCE(SUM(beneficiaries_female), 0) AS f
+      FROM reports WHERE status = 'approved'`);
     data.summary = c.c;
     data.totalAmount = a.s;
     data.totalBeneficiaries = b.s;
+    data.totalMale = g.m;
+    data.totalFemale = g.f;
   }
 
   if (permissions.users) {

@@ -128,6 +128,7 @@
                 <button class="tab-btn" data-tab="reports" data-i18n="adm.tab.reports">التقارير</button>
                 <button class="tab-btn" data-tab="users" data-i18n="adm.tab.users">المستخدمين</button>
                 <button class="tab-btn" data-tab="activity" data-i18n="adm.tab.activity">سجل النشاطات</button>
+                <button class="tab-btn" data-tab="ops" data-i18n="adm.tab.ops">الأداء</button>
                 <button class="tab-btn" data-tab="settings" data-i18n="adm.tab.settings">الإعدادات</button>
                 <button class="tab-btn" data-tab="share" data-i18n="adm.tab.share">المشاركة</button>
             </div>
@@ -161,6 +162,16 @@
                     <div class="chart-card">
                         <h4 data-i18n="adm.chart.benLoc">المستفيدين حسب المحلية</h4>
                         <canvas id="beneficiariesChart" width="350" height="300"></canvas>
+                    </div>
+                    <div class="chart-card">
+                        <h4 data-i18n="adm.chart.gender">التوزيع حسب النوع (ذكور/إناث)</h4>
+                        <canvas id="genderChart" width="350" height="300"></canvas>
+                        <div class="legend-container" id="genderLegend"></div>
+                    </div>
+                    <div class="chart-card">
+                        <h4 data-i18n="adm.chart.yearly">التقارير السنوية</h4>
+                        <canvas id="yearlyChart" width="350" height="300"></canvas>
+                        <div class="legend-container" id="yearlyStats" style="justify-content:center;flex-wrap:wrap;"></div>
                     </div>
                 </div>
             </div>
@@ -197,13 +208,20 @@
                             <option value="approved" data-i18n="status.approved">تمت الموافقة</option>
                             <option value="rejected" data-i18n="status.rejected">مرفوض</option>
                         </select>
+                        <select id="filterYear" onchange="loadReports()">
+                            <option value="" data-i18n="adm.reports.year">كل السنوات</option>
+                        </select>
+                        <input type="date" id="filterFrom" data-i18n-title="adm.reports.from" title="من تاريخ">
+                        <input type="date" id="filterTo" data-i18n-title="adm.reports.to" title="إلى تاريخ">
                         <input type="text" id="filterSearch" data-i18n-ph="adm.reports.search" placeholder="بحث..." style="padding:8px 12px;border:1px solid var(--border-color);border-radius:8px;font-family:inherit;" onkeyup="if(event.key==='Enter')loadReports()">
+                        <button class="btn btn-outline" onclick="resetFilters()" style="padding:6px 14px;"><span data-i18n="adm.reports.resetFilters">إلغاء الفلاتر</span></button>
                     </div>
                     <div style="overflow-x:auto;">
                         <table class="data-table">
                             <thead>
                                 <tr>
                                     <th data-i18n="adm.reports.th.date">التاريخ</th>
+                                    <th data-i18n="adm.reports.th.ref">الرقم المرجعي</th>
                                     <th data-i18n="adm.reports.th.err">الغرفة</th>
                                     <th data-i18n="adm.reports.th.locality">المحلية</th>
                                     <th data-i18n="adm.reports.th.donor">المانح</th>
@@ -240,6 +258,7 @@
                         </select>
                         <select id="userRole">
                             <option value="user" data-i18n="adm.users.roleUser">مستخدم</option>
+                            <option value="locality_admin" data-i18n="usr.role.localityAdmin">مشرف محلية</option>
                             <option value="admin" data-i18n="adm.users.roleAdmin">مدير</option>
                         </select>
                         <button type="submit" class="btn btn-primary"><span data-i18n="add">إضافة</span></button>
@@ -325,6 +344,25 @@
                     <div class="items-grid" id="partnersGrid"></div>
                 </div>
 
+                <div class="management-section">
+                    <h3>
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>
+                        <span data-i18n="adm.backup.title">النسخ الاحتياطي</span>
+                    </h3>
+                    <p style="color:var(--text-light);margin-bottom:15px;font-size:0.9rem;" data-i18n="adm.backup.desc">تصدير جميع البيانات كملف JSON، أو استعادة نسخة سابقة</p>
+                    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                        <button class="btn btn-primary" onclick="exportBackup()">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+                            <span data-i18n="adm.backup.export">تصدير نسخة احتياطية</span>
+                        </button>
+                        <button class="btn btn-outline" onclick="restoreBackup()">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>
+                            <span data-i18n="adm.backup.restore">استعادة من نسخة</span>
+                        </button>
+                        <input type="file" id="backupFileInput" accept="application/json" style="display:none;" onchange="doRestoreBackup(this)">
+                    </div>
+                </div>
+
                 <div class="management-section" style="border:2px solid var(--danger-color);">
                     <h3 style="color:var(--danger-color);">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
@@ -380,6 +418,44 @@
                         </button>
                     </div>
                     <div id="activeShareLinks"></div>
+                </div>
+            </div>
+
+            <!-- Ops Tab -->
+            <div class="tab-content" id="opsTab">
+                <div class="management-section">
+                    <h3>
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-5h2v5zm4 0h-2V7h2v10zm4 0h-2v-3h2v3z"/></svg>
+                        <span data-i18n="adm.ops.title">مؤشرات الأداء التشغيلية</span>
+                    </h3>
+                    <div class="summary-cards" id="opsCards" style="padding:5px 0 15px;">
+                        <div class="summary-card">
+                            <div class="summary-number" id="opsAvgReview">-</div>
+                            <div class="summary-label" data-i18n="adm.ops.avgReview">متوسط زمن المراجعة</div>
+                        </div>
+                        <div class="summary-card green">
+                            <div class="summary-number" id="opsApprovalRate">-</div>
+                            <div class="summary-label" data-i18n="adm.ops.approvalRate">نسبة الموافقة</div>
+                        </div>
+                        <div class="summary-card orange">
+                            <div class="summary-number" id="opsPending">0</div>
+                            <div class="summary-label" data-i18n="adm.ops.pending">قيد المراجعة</div>
+                        </div>
+                        <div class="summary-card red">
+                            <div class="summary-number" id="opsPendingOld">0</div>
+                            <div class="summary-label" data-i18n="adm.ops.pendingOld">بانتظار المراجعة 7+ أيام</div>
+                        </div>
+                    </div>
+                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:15px;">
+                        <div style="background:rgba(255,255,255,0.15);border-radius:12px;padding:15px;">
+                            <h4 style="margin-bottom:10px;color:var(--primary-dark);" data-i18n="adm.ops.reasons">أسباب الرفض الأكثر تكراراً</h4>
+                            <div id="opsReasons"><div class="empty-state"><h3 data-i18n="adm.ops.noReasons">لا توجد أسباب مسجلة</h3></div></div>
+                        </div>
+                        <div style="background:rgba(255,255,255,0.15);border-radius:12px;padding:15px;">
+                            <h4 style="margin-bottom:10px;color:var(--primary-dark);" data-i18n="adm.ops.reviewers">نشاط المراجعين</h4>
+                            <div id="opsReviewers"><div class="empty-state"><h3 data-i18n="adm.ops.noReviewers">لا توجد مراجعات بعد</h3></div></div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -625,6 +701,7 @@
                 document.getElementById(this.dataset.tab + 'Tab').classList.add('active');
                 if (this.dataset.tab === 'activity') loadActivity();
                 if (this.dataset.tab === 'share') loadShareLinks();
+                if (this.dataset.tab === 'ops') loadOps();
             });
         });
 
@@ -637,15 +714,47 @@
             const sect = document.getElementById('filterSector').value;
             const st = document.getElementById('filterStatus').value;
             const search = document.getElementById('filterSearch').value;
+            const yr = document.getElementById('filterYear').value;
+            const from = document.getElementById('filterFrom').value;
+            const to = document.getElementById('filterTo').value;
             if (loc) params.set('localityId', loc);
             if (don) params.set('donorId', don);
             if (sect) params.set('sectorId', sect);
             if (st) params.set('status', st);
             if (search) params.set('search', search);
+            if (yr) params.set('year', yr);
+            if (from) params.set('from', from);
+            if (to) params.set('to', to);
 
             const qs = params.toString() ? '?' + params.toString() : '';
             allReports = await API.request('/reports' + qs);
             renderReportsTable();
+        }
+
+        function resetFilters() {
+            document.getElementById('filterLocality').value = '';
+            document.getElementById('filterDonor').value = '';
+            document.getElementById('filterSector').value = '';
+            document.getElementById('filterStatus').value = '';
+            document.getElementById('filterSearch').value = '';
+            document.getElementById('filterYear').value = '';
+            document.getElementById('filterFrom').value = '';
+            document.getElementById('filterTo').value = '';
+            loadReports();
+        }
+
+        function populateYearFilter(stats) {
+            const sel = document.getElementById('filterYear');
+            if (!sel) return;
+            const years = new Set();
+            if (stats && stats.yearStats) stats.yearStats.forEach(y => { if (y.year) years.add(y.year); });
+            const now = new Date().getFullYear();
+            for (let y = now; y >= now - 6; y--) years.add(y);
+            const current = sel.value;
+            sel.innerHTML = `<option value="" data-i18n="adm.reports.year">كل السنوات</option>` +
+                [...years].sort((a, b) => b - a).map(y => `<option value="${y}">${y}</option>`).join('');
+            if (current) sel.value = current;
+            I18N.apply();
         }
 
         function renderReportsTable() {
@@ -660,6 +769,7 @@
             tbody.innerHTML = allReports.map(r => `
                 <tr>
                     <td style="white-space:nowrap;">${formatDate(r.createdAt)}</td>
+                    <td>${r.refCode ? `<span class="status-badge" style="background:#EDE7F6;color:#673AB7;white-space:nowrap;">${escapeHtml(r.refCode)}</span>` : '-'}</td>
                     <td><strong>${escapeHtml(r.errName)}</strong><br><small style="color:var(--text-light);">${escapeHtml(r.userName)}</small></td>
                     <td>${escapeHtml(I18N.pick(r.localityAr, r.localityEn))}</td>
                     <td>${escapeHtml(r.donorName)}</td>
@@ -691,6 +801,7 @@
             const reviewer = r.reviewerName ? `<div class="detail-row"><div class="detail-label">${I18N.t('adm.view.reviewer')}</div><div class="detail-value">${escapeHtml(r.reviewerName)}</div></div>` : '';
             document.getElementById('reportModalBody').innerHTML = `
                 <div class="detail-row"><div class="detail-label">${I18N.t('adm.view.date')}</div><div class="detail-value">${formatDateTime(r.createdAt)}</div></div>
+                ${r.refCode ? `<div class="detail-row"><div class="detail-label">${I18N.t('usr.refCode')}</div><div class="detail-value">${escapeHtml(r.refCode)}</div></div>` : ''}
                 <div class="detail-row"><div class="detail-label">${I18N.t('adm.view.err')}</div><div class="detail-value">${escapeHtml(r.errName)}</div></div>
                 <div class="detail-row"><div class="detail-label">${I18N.t('adm.view.user')}</div><div class="detail-value">${escapeHtml(r.userName)} (${escapeHtml(r.userEmail)})</div></div>
                 <div class="detail-row"><div class="detail-label">${I18N.t('adm.view.locality')}</div><div class="detail-value">${escapeHtml(I18N.pick(r.localityAr, r.localityEn))}</div></div>
@@ -810,7 +921,7 @@
             const localities = meta.localities;
             tbody.innerHTML = users.map(u => {
                 const loc = localities.find(l => l.id === u.localityId);
-                const roleLabel = u.role === 'admin' ? I18N.t('adm.users.roleAdmin') : I18N.t('adm.users.roleUser');
+                const roleLabel = u.role === 'admin' ? I18N.t('adm.users.roleAdmin') : u.role === 'locality_admin' ? I18N.t('usr.role.localityAdmin') : I18N.t('adm.users.roleUser');
                 const statusLabel = u.active ? I18N.t('adm.users.active') : I18N.t('adm.users.inactive');
                 return `
                 <tr>
@@ -1184,6 +1295,7 @@
                     document.getElementById('reportsTableBody').innerHTML = data.reports.map(r => `
                         <tr>
                             <td>${formatDate(r.created_at)}</td>
+                            <td>${r.ref_code ? `<span class="status-badge" style="background:#EDE7F6;color:#673AB7;white-space:nowrap;">${escapeHtml(r.ref_code)}</span>` : '-'}</td>
                             <td><strong>${escapeHtml(r.err_name)}</strong></td>
                             <td>${escapeHtml(I18N.pick(r.locality_ar, r.locality_en))}</td>
                             <td>${escapeHtml(r.donor_name)}</td>
@@ -1402,6 +1514,94 @@
             drawLineChart('monthlyChart', stats.monthStats.map(m => ({ label: pickName(m), value: m.count })));
             drawBarChart('amountChart', stats.localityStats.filter(s => s.totalAmount > 0).map(s => ({ label: pickName(s), value: s.totalAmount, color: s.color })));
             drawBarChart('beneficiariesChart', stats.localityStats.filter(s => s.totalBeneficiaries > 0).map(s => ({ label: pickName(s), value: s.totalBeneficiaries, color: s.color })));
+
+            const gData = [
+                { label: I18N.t('adm.gender.male'), value: stats.genderStats.male, color: '#3B82F6' },
+                { label: I18N.t('adm.gender.female'), value: stats.genderStats.female, color: '#EC4899' }
+            ].filter(d => d.value > 0);
+            drawPieChart('genderChart', gData);
+            const totalGender = stats.genderStats.male + stats.genderStats.female;
+            document.getElementById('genderLegend').innerHTML = gData.map(d => `<div class="legend-item"><div class="legend-color" style="background:${d.color}"></div>${escapeHtml(d.label)}: ${formatNumber(d.value)}</div>`).join('') +
+                (totalGender > 0 ? `<div class="legend-item" style="font-weight:700;">${I18N.t('adm.gender.femaleShare')}: ${Math.round(stats.genderStats.female / totalGender * 100)}%</div>` : '');
+
+            drawBarChart('yearlyChart', stats.yearStats.map(y => ({ label: String(y.year), value: y.count, color: '#673AB7' })));
+            document.getElementById('yearlyStats').innerHTML = stats.yearStats.map(y => `<div class="legend-item">${y.year}: ${formatNumber(y.count)}</div>`).join('');
+            populateYearFilter(stats);
+        }
+
+        // ==================== Ops ====================
+
+        async function loadOps() {
+            try {
+                const o = await API.request('/analytics/ops');
+                document.getElementById('opsAvgReview').textContent = o.avgReviewHours == null ? '-' : `${formatNumber(o.avgReviewHours)} ${I18N.t('adm.ops.hours')}`;
+                document.getElementById('opsApprovalRate').textContent = o.approvalRate == null ? '-' : o.approvalRate + '%';
+                document.getElementById('opsPending').textContent = formatNumber(o.pendingCount);
+                document.getElementById('opsPendingOld').textContent = formatNumber(o.pendingOldCount);
+
+                const reasons = document.getElementById('opsReasons');
+                if (!o.rejectionReasons.length) {
+                    reasons.innerHTML = `<div class="empty-state"><h3>${I18N.t('adm.ops.noReasons')}</h3></div>`;
+                } else {
+                    const max = Math.max(...o.rejectionReasons.map(r => r.count));
+                    reasons.innerHTML = o.rejectionReasons.map(r => `
+                        <div style="margin-bottom:8px;">
+                            <div style="display:flex;justify-content:space-between;font-size:0.85rem;margin-bottom:3px;">
+                                <span>${escapeHtml(r.reason)}</span><span>${r.count}</span>
+                            </div>
+                            <div style="height:6px;background:rgba(0,0,0,0.1);border-radius:4px;overflow:hidden;">
+                                <div style="height:100%;width:${Math.round(r.count / max * 100)}%;background:var(--danger-color);border-radius:4px;"></div>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+
+                const reviewers = document.getElementById('opsReviewers');
+                if (!o.reviewers.length) {
+                    reviewers.innerHTML = `<div class="empty-state"><h3>${I18N.t('adm.ops.noReviewers')}</h3></div>`;
+                } else {
+                    reviewers.innerHTML = o.reviewers.map(r => `
+                        <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.1);font-size:0.9rem;">
+                            <span>${escapeHtml(r.name)}</span><span class="count-badge">${r.count}</span>
+                        </div>
+                    `).join('');
+                }
+            } catch (e) { /* ignore */ }
+        }
+
+        // ==================== Backup ====================
+
+        async function exportBackup() {
+            try {
+                const data = await API.request('/backup');
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = `north-darfur-backup-${new Date().toISOString().split('T')[0]}.json`;
+                link.click();
+                showToast(I18N.t('adm.backup.exported'));
+            } catch (e) { showToast(e.message, 'error'); }
+        }
+
+        function restoreBackup() {
+            document.getElementById('backupFileInput').click();
+        }
+
+        async function doRestoreBackup(input) {
+            const file = input.files[0];
+            if (!file) return;
+            try {
+                const data = JSON.parse(await file.text());
+                if (!confirm(I18N.t('adm.confirm.restore1'))) return;
+                if (!confirm(I18N.t('adm.confirm.restore2'))) return;
+                const result = await API.request('/backup/restore', 'POST', data);
+                showToast(`${I18N.t('adm.backup.restored')} ${formatNumber(result.reports)} ${I18N.t('adm.csv.err')}`);
+                await initDashboard();
+            } catch (e) {
+                showToast((e.data && e.data.error) || I18N.t('adm.backup.invalid'), 'error');
+            } finally {
+                input.value = '';
+            }
         }
 
         // ==================== Export ====================

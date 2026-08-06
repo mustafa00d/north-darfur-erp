@@ -23,6 +23,11 @@ router.post('/', asyncHandler(async (req, res) => {
     return res.status(400).json({ error: 'كلمة المرور يجب أن تكون 6 أحرف على الأقل' });
   }
 
+  const finalRole = role === 'admin' ? 'admin' : role === 'locality_admin' ? 'locality_admin' : 'user';
+  if (finalRole === 'locality_admin' && !localityId) {
+    return res.status(400).json({ error: 'مشرف المحلية يجب أن يكون مرتبطاً بمحلية' });
+  }
+
   const exists = await db.get('SELECT id FROM users WHERE email = ?', [email.toLowerCase()]);
   if (exists) {
     return res.status(409).json({ error: 'البريد الإلكتروني مسجل مسبقاً' });
@@ -32,7 +37,7 @@ router.post('/', asyncHandler(async (req, res) => {
   const result = await db.run(`
     INSERT INTO users (email, password_hash, name, role, locality_id, active, must_change_password)
     VALUES (?, ?, ?, ?, ?, 1, 1)
-  `, [email.toLowerCase(), hash, name, role === 'admin' ? 'admin' : 'user', localityId || null]);
+  `, [email.toLowerCase(), hash, name, finalRole, localityId || null]);
 
   const user = await db.get('SELECT * FROM users WHERE id = ?', [result.lastInsertRowid]);
   await logActivity(req.user, 'إضافة مستخدم', 'user', user.id, `${name} (${email})`);
@@ -55,6 +60,7 @@ router.put('/:id', asyncHandler(async (req, res) => {
   if (localityId !== undefined) { sets.push('locality_id = ?'); values.push(localityId); }
   if (role !== undefined && role === 'admin') { sets.push("role = 'admin'"); }
   if (role !== undefined && role === 'user') { sets.push("role = 'user'"); }
+  if (role !== undefined && role === 'locality_admin') { sets.push("role = 'locality_admin'"); }
   if (active !== undefined) { sets.push('active = ?'); values.push(active ? 1 : 0); }
   if (password) {
     sets.push('password_hash = ?');

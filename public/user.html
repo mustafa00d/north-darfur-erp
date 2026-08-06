@@ -115,6 +115,11 @@
                 </div>
 
                 <div class="form-card">
+                    <label class="form-label"><span data-i18n="usr.lbl.year">السنة</span> <span class="required">*</span></label>
+                    <select name="year" id="yearSelect" class="form-input" required></select>
+                </div>
+
+                <div class="form-card">
                     <label class="form-label"><span data-i18n="usr.lbl.amount">المبلغ المستلم بالجنيه</span> <span class="required">*</span></label>
                     <input type="number" name="amountReceived" class="form-input" data-i18n-ph="usr.form.answer" placeholder="إجابتك" min="0" required>
                 </div>
@@ -190,6 +195,20 @@
                     <div class="empty-state"><h3 data-i18n="usr.myreports.empty">لا توجد تقارير بعد</h3><p data-i18n="usr.myreports.empty2">أرسل تقريراً ليظهر هنا مع حالته</p></div>
                 </div>
             </div>
+
+            <!-- Locality Admin Review -->
+            <div class="card" style="margin:20px 0;" id="reviewSection" hidden>
+                <h3 style="color:var(--primary-dark);margin-bottom:15px;display:flex;align-items:center;gap:10px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="22" height="22" style="color:var(--primary-color);">
+                        <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/>
+                    </svg>
+                    <span data-i18n="usr.review.title">مراجعة تقارير محليتي</span>
+                </h3>
+                <p class="review-subtitle" data-i18n="usr.review.subtitle" style="color:var(--text-light);font-size:0.9rem;margin-bottom:12px;">الموافقة أو رفض التقارير الخاصة بمحليتك</p>
+                <div id="reviewList">
+                    <div class="empty-state"><h3 data-i18n="usr.review.empty">لا توجد تقارير بانتظار المراجعة</h3></div>
+                </div>
+            </div>
         </div>
 
         <footer class="footer">
@@ -212,6 +231,25 @@
                 <p style="color:var(--text-light);" data-i18n="usr.success.body">سيتم مراجعة التقرير من قبل الإدارة، وستصلك إشعار بالنتيجة.</p>
             </div>
             <div class="modal-footer"><button class="btn btn-primary" onclick="closeSuccessModal()"><span data-i18n="usr.success.ok">حسناً</span></button></div>
+        </div>
+    </div>
+
+    <!-- Duplicate Confirm Modal -->
+    <div class="modal" id="duplicateModal">
+        <div class="modal-content">
+            <div class="modal-header"><h3 data-i18n="usr.duplicate.title">يوجد تقرير مطابق</h3><button class="modal-close" onclick="closeDuplicateModal()">&times;</button></div>
+            <div class="modal-body" style="text-align:center;padding:30px 40px;">
+                <div style="width:70px;height:70px;background:#FFF3E0;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style="width:34px;height:34px;color:#F59E0B;">
+                        <path d="M12 2L1 21h22L12 2zm1 14h-2v2h2v-2zm0-6h-2v4h2v-4z"/>
+                    </svg>
+                </div>
+                <p style="color:var(--text-light);line-height:1.8;" data-i18n="usr.duplicate.body">أدخلت نفس الغرفة والشهر والمانح لتقرير سابق. هل تريد الإرسال على أي حال؟</p>
+            </div>
+            <div class="modal-footer" style="justify-content:center;gap:10px;">
+                <button class="btn btn-outline" onclick="closeDuplicateModal()"><span data-i18n="cancel">إلغاء</span></button>
+                <button class="btn btn-primary" onclick="submitReport(true)"><span data-i18n="usr.duplicate.send">إرسال على أي حال</span></button>
+            </div>
         </div>
     </div>
 
@@ -270,6 +308,10 @@
             loadMyStats();
             loadMyReports();
             loadNotifications();
+            if (currentUser.role === 'locality_admin') {
+                document.getElementById('reviewSection').hidden = false;
+                loadReviewList();
+            }
             setInterval(loadNotifications, 60000);
         }
 
@@ -294,9 +336,252 @@
             populateRadioList('partnerRadioList', meta.partners, 'partnerId', 'id', 'name');
             populateRadioList('monthRadioList', meta.months, 'monthId', 'id', 'nameAr', 'nameEn');
 
+            const yearSelect = document.getElementById('yearSelect');
+            const now = new Date().getFullYear();
+            const years = [];
+            for (let y = now; y >= now - 6; y--) years.push(y);
+            yearSelect.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
+
             if (currentUser && currentUser.localityId) {
                 const radio = document.querySelector(`input[name="localityId"][value="${currentUser.localityId}"]`);
                 if (radio) radio.checked = true;
+            }
+            restoreDraft();
+        }
+
+        function formValues() {
+            const form = document.getElementById('reportForm');
+            const fd = new FormData(form);
+            const radioVal = (name) => {
+                const el = form.querySelector(`input[name="${name}"]:checked`);
+                return el ? parseInt(el.value) : null;
+            };
+            return {
+                errName: fd.get('errName'),
+                localityId: radioVal('localityId'),
+                donorId: radioVal('donorId'),
+                supportTypeId: radioVal('supportTypeId'),
+                supportDescription: fd.get('supportDescription'),
+                partnerId: radioVal('partnerId'),
+                monthId: radioVal('monthId'),
+                year: parseInt(document.getElementById('yearSelect').value) || new Date().getFullYear(),
+                amountReceived: parseFloat(fd.get('amountReceived')),
+                beneficiariesTotal: parseInt(fd.get('beneficiariesTotal')),
+                beneficiariesMale: parseInt(fd.get('beneficiariesMale')),
+                beneficiariesFemale: parseInt(fd.get('beneficiariesFemale')),
+                challenges: fd.get('challenges'),
+                positiveOutcomes: fd.get('positiveOutcomes')
+            };
+        }
+
+        function saveDraft() {
+            try {
+                localStorage.setItem('northDarfur_draft', JSON.stringify(formValues()));
+            } catch (e) { /* ignore */ }
+        }
+
+        function restoreDraft() {
+            try {
+                const raw = localStorage.getItem('northDarfur_draft');
+                if (!raw) return;
+                const d = JSON.parse(raw);
+                const form = document.getElementById('reportForm');
+                form.elements['errName'].value = d.errName || '';
+                form.elements['supportDescription'].value = d.supportDescription || '';
+                form.elements['amountReceived'].value = d.amountReceived || '';
+                form.elements['beneficiariesTotal'].value = d.beneficiariesTotal || '';
+                form.elements['beneficiariesMale'].value = d.beneficiariesMale || '';
+                form.elements['beneficiariesFemale'].value = d.beneficiariesFemale || '';
+                form.elements['challenges'].value = d.challenges || '';
+                form.elements['positiveOutcomes'].value = d.positiveOutcomes || '';
+                for (const name of ['localityId', 'donorId', 'supportTypeId', 'partnerId', 'monthId']) {
+                    if (d[name]) {
+                        const el = form.querySelector(`input[name="${name}"][value="${d[name]}"]`);
+                        if (el) el.checked = true;
+                    }
+                }
+                if (d.year) document.getElementById('yearSelect').value = d.year;
+                showToast(I18N.t('usr.draft.restored'));
+            } catch (e) { /* ignore */ }
+        }
+
+        let draftTimer = null;
+        document.getElementById('reportForm').addEventListener('input', function() {
+            clearTimeout(draftTimer);
+            draftTimer = setTimeout(saveDraft, 800);
+        });
+
+        document.getElementById('reportForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const report = formValues();
+
+            if (!navigator.onLine) {
+                queueReport(report);
+                return;
+            }
+
+            const benTotal = Number(report.beneficiariesTotal) || 0;
+            const genderOk = benTotal === Number(report.beneficiariesMale) + Number(report.beneficiariesFemale);
+            if (benTotal > 0 && !genderOk) {
+                if (!confirm(I18N.t('usr.gender.warn'))) return;
+            }
+            if (Number(report.amountReceived) > 100000000) {
+                if (!confirm(I18N.t('usr.amount.warn'))) return;
+            }
+
+            try {
+                await API.request('/reports', 'POST', report);
+                onReportSubmitted();
+            } catch (err) {
+                if (err.status === 409 && err.data && err.data.duplicate) {
+                    pendingReport = report;
+                    document.getElementById('duplicateModal').classList.add('show');
+                } else {
+                    showToast((err.data && err.data.error) || err.message, 'error');
+                }
+            }
+        });
+
+        let pendingReport = null;
+        function closeDuplicateModal() {
+            pendingReport = null;
+            document.getElementById('duplicateModal').classList.remove('show');
+        }
+
+        async function submitReport(force) {
+            document.getElementById('duplicateModal').classList.remove('show');
+            const report = pendingReport;
+            pendingReport = null;
+            if (!report) return;
+            try {
+                if (force) report.force = true;
+                await API.request('/reports', 'POST', report);
+                onReportSubmitted();
+            } catch (err) {
+                showToast((err.data && err.data.error) || err.message, 'error');
+            }
+        }
+
+        function onReportSubmitted() {
+            localStorage.removeItem('northDarfur_draft');
+            document.getElementById('successModal').classList.add('show');
+            document.getElementById('reportForm').reset();
+            document.getElementById('yearSelect').value = new Date().getFullYear();
+            if (currentUser && currentUser.localityId) {
+                const radio = document.querySelector(`input[name="localityId"][value="${currentUser.localityId}"]`);
+                if (radio) radio.checked = true;
+            }
+            loadMyReports();
+            loadMyStats();
+        }
+
+        function queueReport(report) {
+            try {
+                const queue = JSON.parse(localStorage.getItem('northDarfur_queue') || '[]');
+                queue.push(report);
+                localStorage.setItem('northDarfur_queue', JSON.stringify(queue));
+                localStorage.removeItem('northDarfur_draft');
+                document.getElementById('reportForm').reset();
+                document.getElementById('yearSelect').value = new Date().getFullYear();
+                if (currentUser && currentUser.localityId) {
+                    const radio = document.querySelector(`input[name="localityId"][value="${currentUser.localityId}"]`);
+                    if (radio) radio.checked = true;
+                }
+                showToast(I18N.t('usr.draft.offline'));
+            } catch (e) { /* ignore */ }
+        }
+
+        async function flushQueue() {
+            let queue;
+            try {
+                queue = JSON.parse(localStorage.getItem('northDarfur_queue') || '[]');
+            } catch (e) { queue = []; }
+            if (!queue.length) return;
+            const failed = [];
+            for (const report of queue) {
+                try {
+                    await API.request('/reports', 'POST', report);
+                } catch (e) {
+                    failed.push(report);
+                }
+            }
+            localStorage.setItem('northDarfur_queue', JSON.stringify(failed));
+            if (failed.length < queue.length) {
+                showToast(I18N.t('usr.draft.pendingSent'));
+                loadMyReports();
+                loadMyStats();
+            }
+        }
+        window.addEventListener('online', flushQueue);
+
+        async function loadMyReports() {
+            try {
+                const reports = await API.request('/reports');
+                const container = document.getElementById('myReportsList');
+                if (!reports.length) {
+                    container.innerHTML = `<div class="empty-state"><h3>${I18N.t('usr.myreports.empty')}</h3><p>${I18N.t('usr.myreports.empty2')}</p></div>`;
+                    return;
+                }
+                container.innerHTML = reports.map(r => `
+                    <div class="detail-row" style="flex-wrap:wrap;">
+                        <div class="detail-label">${formatDate(r.createdAt)}</div>
+                        <div class="detail-value" style="flex:1;">${escapeHtml(r.errName)} - ${escapeHtml(I18N.pick(r.localityAr, r.localityEn))}</div>
+                        <div style="display:flex;align-items:center;gap:8px;">
+                            ${r.refCode ? `<span class="status-badge" style="background:#EDE7F6;color:#673AB7;">${escapeHtml(r.refCode)}</span>` : ''}
+                            ${statusBadge(r.status)}
+                            ${r.status === 'rejected' ? `<button class="btn btn-outline" style="padding:4px 12px;font-size:0.8rem;" onclick="resubmitReport(${r.id})">${I18N.t('usr.resubmit')}</button>` : ''}
+                        </div>
+                    </div>
+                `).join('');
+            } catch (e) { /* silently ignore */ }
+        }
+
+        async function resubmitReport(id) {
+            try {
+                await API.request(`/reports/${id}/resubmit`, 'POST');
+                showToast(I18N.t('usr.resubmitted'));
+                loadMyReports();
+                loadMyStats();
+            } catch (err) {
+                showToast((err.data && err.data.error) || err.message, 'error');
+            }
+        }
+
+        async function loadReviewList() {
+            try {
+                const reports = await API.request('/reports?status=submitted');
+                const container = document.getElementById('reviewList');
+                if (!reports.length) {
+                    container.innerHTML = `<div class="empty-state"><h3>${I18N.t('usr.review.empty')}</h3></div>`;
+                    return;
+                }
+                container.innerHTML = reports.map(r => `
+                    <div class="detail-row" style="flex-wrap:wrap;align-items:flex-start;">
+                        <div class="detail-label">${formatDate(r.createdAt)}</div>
+                        <div class="detail-value" style="flex:1;">
+                            <div><strong>${escapeHtml(r.errName)}</strong></div>
+                            <div style="font-size:0.85rem;color:var(--text-light);">${r.refCode ? escapeHtml(r.refCode) + ' — ' : ''}${escapeHtml(I18N.pick(r.localityAr, r.localityEn))} · ${I18N.t('months.' + r.monthId)} · ${r.year}</div>
+                            <div style="font-size:0.85rem;color:var(--text-light);">${escapeHtml(r.donorName || '')}</div>
+                            <div style="font-size:0.85rem;color:var(--text-light);"><span data-i18n="usr.lbl.amount">المبلغ المستلم بالجنيه</span>: ${formatNumber(r.amountReceived)}</div>                            <input type="text" id="reviewNote_${r.id}" class="form-input" style="margin-top:8px;padding:6px 10px;font-size:0.85rem;" data-i18n-ph="usr.review.note" placeholder="${I18N.t('usr.review.note')}">
+                        </div>
+                        <div style="display:flex;gap:8px;flex-direction:column;">
+                            <button class="btn btn-primary" style="padding:6px 16px;font-size:0.85rem;" onclick="doReview(${r.id}, 'approved')">${I18N.t('usr.review.approve')}</button>
+                            <button class="btn btn-outline" style="padding:6px 16px;font-size:0.85rem;color:#DC2626;border-color:#DC2626;" onclick="doReview(${r.id}, 'rejected')">${I18N.t('usr.review.reject')}</button>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (e) { /* ignore */ }
+        }
+
+        async function doReview(id, status) {
+            const note = document.getElementById('reviewNote_' + id).value;
+            try {
+                await API.request(`/reports/${id}/review`, 'POST', { status, note });
+                showToast(I18N.t(status === 'approved' ? 'usr.review.approved' : 'usr.review.rejected'));
+                loadReviewList();
+                loadMyReports();
+            } catch (err) {
+                showToast((err.data && err.data.error) || err.message, 'error');
             }
         }
 
@@ -314,57 +599,6 @@
                     </div>
                 `;
             }).join('');
-        }
-
-        document.getElementById('reportForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            const formData = new FormData(this);
-            const report = {
-                errName: formData.get('errName'),
-                localityId: parseInt(formData.get('localityId')),
-                donorId: parseInt(formData.get('donorId')),
-                supportTypeId: parseInt(formData.get('supportTypeId')),
-                supportDescription: formData.get('supportDescription'),
-                partnerId: parseInt(formData.get('partnerId')),
-                monthId: parseInt(formData.get('monthId')),
-                amountReceived: parseFloat(formData.get('amountReceived')),
-                beneficiariesTotal: parseInt(formData.get('beneficiariesTotal')),
-                beneficiariesMale: parseInt(formData.get('beneficiariesMale')),
-                beneficiariesFemale: parseInt(formData.get('beneficiariesFemale')),
-                challenges: formData.get('challenges'),
-                positiveOutcomes: formData.get('positiveOutcomes')
-            };
-
-            try {
-                await API.request('/reports', 'POST', report);
-                document.getElementById('successModal').classList.add('show');
-                this.reset();
-                if (currentUser && currentUser.localityId) {
-                    const radio = document.querySelector(`input[name="localityId"][value="${currentUser.localityId}"]`);
-                    if (radio) radio.checked = true;
-                }
-                loadMyReports();
-            } catch (err) {
-                showToast(err.message, 'error');
-            }
-        });
-
-        async function loadMyReports() {
-            try {
-                const reports = await API.request('/reports');
-                const container = document.getElementById('myReportsList');
-                if (!reports.length) {
-                    container.innerHTML = `<div class="empty-state"><h3>${I18N.t('usr.myreports.empty')}</h3><p>${I18N.t('usr.myreports.empty2')}</p></div>`;
-                    return;
-                }
-                container.innerHTML = reports.map(r => `
-                    <div class="detail-row" style="flex-wrap:wrap;">
-                        <div class="detail-label">${formatDate(r.createdAt)}</div>
-                        <div class="detail-value" style="flex:1;">${escapeHtml(r.errName)} - ${escapeHtml(I18N.pick(r.localityAr, r.localityEn))}</div>
-                        <div>${statusBadge(r.status)}</div>
-                    </div>
-                `).join('');
-            } catch (e) { /* silently ignore */ }
         }
 
         async function loadNotifications() {

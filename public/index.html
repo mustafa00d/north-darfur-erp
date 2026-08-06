@@ -397,7 +397,7 @@
                 }
                 document.getElementById('userBar').style.display = 'flex';
                 document.getElementById('userEmail').textContent = currentUser.email;
-                document.getElementById('userRole').textContent = currentUser.role === 'admin' ? I18N.t('adm.users.roleAdmin') : I18N.t('adm.users.roleUser');
+                document.getElementById('userRole').textContent = currentUser.role === 'admin' ? I18N.t('adm.users.roleAdmin') : currentUser.role === 'locality_admin' ? I18N.t('usr.role.localityAdmin') : I18N.t('adm.users.roleUser');
                 if (currentUser.role === 'admin') {
                     document.getElementById('linkAdmin').style.display = '';
                 }

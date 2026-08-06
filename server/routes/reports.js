@@ -1,6 +1,7 @@
 import express from 'express';
 import db, { logActivity, createNotification } from '../db.js';
-import { requireAuth, requireAdmin } from '../auth.js';
+import { requireAuth } from '../auth.js';
+import { sendNewReportEmail, sendReportStatusEmail } from '../mailer.js';
 import asyncHandler from '../asyncHandler.js';
 
 const router = express.Router();
@@ -25,6 +26,8 @@ const REPORT_SELECT = `
 function serialize(row) {
   return {
     id: row.id,
+    refCode: row.ref_code,
+    year: row.year,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     userId: row.user_id,
@@ -60,20 +63,41 @@ function serialize(row) {
   };
 }
 
-// GET reports (admin: all; user: own) with filters
-router.get('/', asyncHandler(async (req, res) => {
-  const { localityId, donorId, sectorId, monthId, status, search } = req.query;
-  const where = [];
-  const params = {};
-
-  if (req.user.role !== 'admin') {
-    where.push('r.user_id = @uid');
-    params.uid = req.user.id;
+function scopeWhere(req) {
+  if (req.user.role === 'admin') return { where: [], params: {} };
+  if (req.user.role === 'locality_admin') {
+    return { where: ['r.locality_id = @loc'], params: { loc: req.user.locality_id } };
   }
+  return { where: ['r.user_id = @uid'], params: { uid: req.user.id } };
+}
+
+async function generateRefCode(layer, year) {
+  const row = await layer.get(
+    "SELECT ref_code FROM reports WHERE ref_code LIKE ? ORDER BY ref_code DESC LIMIT 1",
+    [`ND-${year}-%`]
+  );
+  let next = 1;
+  if (row && row.ref_code) {
+    const m = row.ref_code.match(/(\d+)$/);
+    if (m) next = parseInt(m[1], 10) + 1;
+  }
+  return `ND-${year}-${String(next).padStart(4, '0')}`;
+}
+
+// GET reports (admin: all; locality_admin: own locality; user: own) with filters
+router.get('/', asyncHandler(async (req, res) => {
+  const { localityId, donorId, sectorId, monthId, status, search, year, from, to } = req.query;
+  const sc = scopeWhere(req);
+  const where = sc.where.slice();
+  const params = { ...sc.params };
+
   if (localityId) { where.push('r.locality_id = @loc'); params.loc = localityId; }
   if (donorId) { where.push('r.donor_id = @don'); params.don = donorId; }
   if (sectorId) { where.push('r.support_type_id = @sect'); params.sect = sectorId; }
   if (monthId) { where.push('r.month_id = @mon'); params.mon = monthId; }
+  if (year) { where.push('r.year = @yr'); params.yr = year; }
+  if (from) { where.push('r.created_at >= @from'); params.from = new Date(from).toISOString(); }
+  if (to) { where.push('r.created_at <= @to'); params.to = new Date(to).toISOString(); }
   if (status) { where.push('r.status = @st'); params.st = status; }
   if (search) {
     where.push('(r.err_name LIKE @q OR l.name_ar LIKE @q OR d.name LIKE @q)');
@@ -109,25 +133,70 @@ router.post('/', asyncHandler(async (req, res) => {
     }
   }
 
+  // التحقق من التكرار (نفس الغرفة + الشهر + المانح)
+  if (!b.force) {
+    const dup = await db.get(
+      `SELECT id FROM reports WHERE LOWER(TRIM(err_name)) = LOWER(TRIM(@n))
+       AND month_id = @m AND donor_id = @d`,
+      { n: String(b.errName), m: b.monthId, d: b.donorId }
+    );
+    if (dup) {
+      return res.status(409).json({
+        error: 'يوجد تقرير مطابق مسبقاً (نفس الغرفة والشهر والمانح). أرسل القوة لمواصلة الإرسال.',
+        duplicate: true, duplicateId: dup.id
+      });
+    }
+  }
+
+  const year = parseInt(b.year) || new Date().getFullYear();
+  const refCode = await generateRefCode(db, year);
+
   const result = await db.run(`
     INSERT INTO reports (
       user_id, err_name, locality_id, donor_id, support_type_id, support_description,
-      partner_id, month_id, amount_received, beneficiaries_total, beneficiaries_male,
-      beneficiaries_female, challenges, positive_outcomes, status
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'submitted')
+      partner_id, month_id, year, ref_code, amount_received, beneficiaries_total,
+      beneficiaries_male, beneficiaries_female, challenges, positive_outcomes, status
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'submitted')
   `, [
     req.user.id, b.errName, b.localityId, b.donorId, b.supportTypeId,
-    b.supportDescription || '', b.partnerId, b.monthId,
+    b.supportDescription || '', b.partnerId, b.monthId, year, refCode,
     parseFloat(b.amountReceived) || 0, parseInt(b.beneficiariesTotal) || 0,
     parseInt(b.beneficiariesMale) || 0, parseInt(b.beneficiariesFemale) || 0,
     b.challenges, b.positiveOutcomes
   ]);
 
-  await logActivity(req.user, 'إضافة تقرير', 'report', result.lastInsertRowid, `${b.errName}`);
-  await notifyAdmins('تقرير جديد', `أضاف ${req.user.name} تقريراً جديداً: ${b.errName}`);
+  await logActivity(req.user, 'إضافة تقرير', 'report', result.lastInsertRowid, `${b.errName} (${refCode})`);
+  await notifyAdmins('تقرير جديد', `أضاف ${req.user.name} تقريراً جديداً: ${b.errName} (${refCode})`);
+
+  const admins = await db.all("SELECT email FROM users WHERE role = 'admin' AND active = 1");
+  if (admins.length) {
+    await sendNewReportEmail(admins, req.user.name, b.errName, refCode);
+  }
 
   const row = await db.get(`${REPORT_SELECT} WHERE r.id = ?`, [result.lastInsertRowid]);
   res.status(201).json(serialize(row));
+}));
+
+// POST resubmit rejected report (owner)
+router.post('/:id/resubmit', asyncHandler(async (req, res) => {
+  const row = await db.get('SELECT * FROM reports WHERE id = ?', [req.params.id]);
+  if (!row) {
+    return res.status(404).json({ error: 'التقرير غير موجود' });
+  }
+  if (req.user.role !== 'admin' && row.user_id !== req.user.id) {
+    return res.status(403).json({ error: 'غير مصرح' });
+  }
+  if (row.status !== 'rejected') {
+    return res.status(400).json({ error: 'يمكن إعادة إرسال التقارير المرفوضة فقط' });
+  }
+
+  await db.run(
+    "UPDATE reports SET status = 'submitted', reviewed_by = NULL, reviewed_at = NULL, review_note = NULL, updated_at = ? WHERE id = ?",
+    [new Date().toISOString(), row.id]
+  );
+  await logActivity(req.user, 'إعادة إرسال تقرير', 'report', row.id, row.err_name);
+  await notifyAdmins('إعادة إرسال تقرير', `أعاد ${req.user.name} إرسال التقرير: ${row.err_name} (${row.ref_code || ''})`);
+  res.json({ success: true, status: 'submitted' });
 }));
 
 // PUT update report (owner or admin)
@@ -183,11 +252,17 @@ router.delete('/:id', asyncHandler(async (req, res) => {
   res.json({ success: true });
 }));
 
-// POST review (admin only) - approve/reject
-router.post('/:id/review', requireAdmin, asyncHandler(async (req, res) => {
+// POST review (admin or locality_admin of that locality)
+router.post('/:id/review', asyncHandler(async (req, res) => {
   const row = await db.get('SELECT * FROM reports WHERE id = ?', [req.params.id]);
   if (!row) {
     return res.status(404).json({ error: 'التقرير غير موجود' });
+  }
+
+  const canReview = req.user.role === 'admin'
+    || (req.user.role === 'locality_admin' && req.user.locality_id === row.locality_id);
+  if (!canReview) {
+    return res.status(403).json({ error: 'غير مصرح' });
   }
 
   const { status, note } = req.body || {};
@@ -207,6 +282,11 @@ router.post('/:id/review', requireAdmin, asyncHandler(async (req, res) => {
     ? `تقريرك "${row.err_name}" تمت الموافقة عليه.`
     : `تقريرك "${row.err_name}" تم رفضه.${note ? ' السبب: ' + note : ''}`;
   await createNotification(row.user_id, resultTitle, resultMessage, status === 'approved' ? 'success' : 'error');
+
+  const owner = await db.get('SELECT email, name FROM users WHERE id = ?', [row.user_id]);
+  if (owner && owner.email) {
+    await sendReportStatusEmail(owner.email, owner.name, row.err_name, status, note || '', row.ref_code);
+  }
 
   res.json({ success: true, status });
 }));

@@ -97,6 +97,8 @@ CREATE TABLE IF NOT EXISTS reports (
   support_description TEXT,
   partner_id INTEGER NOT NULL,
   month_id INTEGER NOT NULL,
+  year INTEGER NOT NULL DEFAULT 0,
+  ref_code TEXT,
   amount_received ${amount} DEFAULT 0,
   beneficiaries_total INTEGER DEFAULT 0,
   beneficiaries_male INTEGER DEFAULT 0,
@@ -253,6 +255,10 @@ async function migrateColumns(layer) {
     ],
     share_links: [
       ['password_hash', 'TEXT']
+    ],
+    reports: [
+      ['year', 'INTEGER NOT NULL DEFAULT 0'],
+      ['ref_code', 'TEXT']
     ]
   };
   for (const [table, cols] of Object.entries(migrations)) {
@@ -264,6 +270,17 @@ async function migrateColumns(layer) {
       }
     }
   }
+  // ملء السنة والرقم المرجعي للتقارير القديمة
+  try {
+    if (layer.isPG) {
+      await layer.exec(`UPDATE reports SET year = EXTRACT(YEAR FROM created_at)::int WHERE year IS NULL OR year = 0`);
+      await layer.exec(`UPDATE reports SET ref_code = 'ND-' || year || '-' || LPAD(CAST(id AS TEXT), 4, '0') WHERE ref_code IS NULL`);
+    } else {
+      await layer.exec(`UPDATE reports SET year = CAST(strftime('%Y', created_at) AS INTEGER) WHERE year IS NULL OR year = 0`);
+      await layer.exec(`UPDATE reports SET ref_code = 'ND-' || year || '-' || SUBSTR('0000' || id, -4) WHERE ref_code IS NULL`);
+    }
+    await layer.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_reports_ref_code ON reports (ref_code)');
+  } catch (e) { /* الجداول الجديدة لا تحتاج ترحيلاً */ }
 }
 
 // ==================== Module-level DB (auto-selected) ====================
