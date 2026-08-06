@@ -196,7 +196,8 @@ export function createPGLayer(poolLike) {
     async run(sql, params) {
       const t = translateToPG(sql, params);
       let q = t.sql;
-      if (/^\s*insert\b/i.test(q) && !/\breturning\b/i.test(q)) {
+      if (/^\s*insert\b/i.test(q) && !/\breturning\b/i.test(q)
+          && !/insert into app_settings\b/i.test(q)) {
         q += ' RETURNING id';
       }
       const r = await poolLike.query(q, t.values);
