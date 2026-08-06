@@ -2,6 +2,9 @@ import db from './db.js';
 
 const GEMINI_MODELS = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
 
+// كابح الدائرة: عند فشل الحصة (429/400/403) لا نستدعي Gemini مجدداً لمدة 5 دقائق
+let llmOfflineUntil = 0;
+
 export function geminiUrl(model, key) {
   return `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`;
 }
@@ -27,9 +30,10 @@ export async function maskKey(key) {
   return key.slice(0, 4) + '••••••••' + key.slice(-4);
 }
 
-async function callGemini(systemPrompt, userText, maxRetries = 2) {
+async function callGemini(systemPrompt, userText, maxRetries = 1) {
   const key = await getSetting('gemini_api_key');
   if (!key) return null;
+  if (Date.now() < llmOfflineUntil) return null;
   const body = {
     contents: [{ role: 'user', parts: [{ text: userText }] }],
     systemInstruction: { parts: [{ text: systemPrompt }] },
@@ -42,17 +46,25 @@ async function callGemini(systemPrompt, userText, maxRetries = 2) {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(body),
-          signal: AbortSignal.timeout(25000)
+          signal: AbortSignal.timeout(8000)
         });
         if (!res.ok) {
           if (res.status === 404) break;
-          if (res.status === 429 || res.status >= 500) continue;
+          if (res.status === 429 || res.status === 403 || res.status === 400) {
+            llmOfflineUntil = Date.now() + 5 * 60 * 1000;
+            return null;
+          }
+          if (res.status >= 500) continue;
           return null;
         }
         const data = await res.json();
         const text = data?.candidates?.[0]?.content?.parts?.map(p => p.text).join('') || null;
         if (text) return text;
       } catch (e) {
+        if (e && (e.name === 'TimeoutError' || e.name === 'AbortError')) {
+          llmOfflineUntil = Date.now() + 5 * 60 * 1000;
+          return null;
+        }
         continue;
       }
     }
