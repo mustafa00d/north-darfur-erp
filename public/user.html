@@ -253,6 +253,21 @@
         </div>
     </div>
 
+    <!-- Edit Report Modal (owner) -->
+    <div class="modal" id="editUserModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 data-i18n="usr.edit.title">تعديل التقرير</h3>
+                <button class="modal-close" onclick="closeUserEditModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="editUserModalBody" style="max-height:65vh;overflow-y:auto;"></div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="saveUserEdit()"><span data-i18n="save">حفظ</span></button>
+                <button class="btn btn-outline" onclick="closeUserEditModal()"><span data-i18n="cancel">إلغاء</span></button>
+            </div>
+        </div>
+    </div>
+
     <script src="js/i18n.js"></script>
     <script src="js/api.js"></script>
     <script>
@@ -380,6 +395,7 @@
             } catch (e) { /* ignore */ }
         }
 
+        let restoredOnce = false;
         function restoreDraft() {
             try {
                 const raw = localStorage.getItem('northDarfur_draft');
@@ -401,7 +417,10 @@
                     }
                 }
                 if (d.year) document.getElementById('yearSelect').value = d.year;
-                showToast(I18N.t('usr.draft.restored'));
+                if (!restoredOnce) {
+                    showToast(I18N.t('usr.draft.restored'));
+                    restoredOnce = true;
+                }
             } catch (e) { /* ignore */ }
         }
 
@@ -526,14 +545,127 @@
                     <div class="detail-row" style="flex-wrap:wrap;">
                         <div class="detail-label">${formatDate(r.createdAt)}</div>
                         <div class="detail-value" style="flex:1;">${escapeHtml(r.errName)} - ${escapeHtml(I18N.pick(r.localityAr, r.localityEn))}</div>
-                        <div style="display:flex;align-items:center;gap:8px;">
+                        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
                             ${r.refCode ? `<span class="status-badge" style="background:#EDE7F6;color:#673AB7;">${escapeHtml(r.refCode)}</span>` : ''}
                             ${statusBadge(r.status)}
-                            ${r.status === 'rejected' ? `<button class="btn btn-outline" style="padding:4px 12px;font-size:0.8rem;" onclick="resubmitReport(${r.id})">${I18N.t('usr.resubmit')}</button>` : ''}
+                            ${r.status !== 'approved' ? `<button class="btn btn-outline" style="padding:4px 12px;font-size:0.8rem;" onclick="openUserEditModal(${r.id})">${I18N.t('edit')}</button>` : ''}
+                            ${r.status === 'rejected' ? `<button class="btn btn-primary" style="padding:4px 12px;font-size:0.8rem;" onclick="resubmitReport(${r.id})">${I18N.t('usr.resubmit')}</button>` : ''}
                         </div>
                     </div>
                 `).join('');
             } catch (e) { /* silently ignore */ }
+        }
+
+        let editingMyReport = null;
+        async function openUserEditModal(id) {
+            let r;
+            try {
+                r = await API.request(`/reports/${id}`);
+            } catch (e) {
+                showToast((e.data && e.data.error) || e.message, 'error');
+                return;
+            }
+            editingMyReport = r;
+            const opts = (items, valKey, labelAr, labelEn, selected, name) => {
+                const lang = I18N.getLang();
+                return items.map(it => {
+                    let text = it[labelAr] || it.name || '';
+                    if (lang === 'en' && labelEn && it[labelEn]) text = it[labelEn];
+                    const sel = it[valKey] === selected ? 'selected' : '';
+                    return `<option value="${it[valKey]}" ${sel}>${escapeHtml(text)}</option>`;
+                }).join('');
+            };
+            document.getElementById('editUserModalBody').innerHTML = `
+                <div class="form-card" style="margin:0 0 12px;box-shadow:none;border:1px solid var(--border-color);">
+                    <label class="form-label"><span data-i18n="usr.lbl.errName">اسم غرفة الطوارئ</span> <span class="required">*</span></label>
+                    <input type="text" id="ueErrName" class="form-input" value="${escapeHtml(r.errName)}" required>
+                </div>
+                <div class="form-card" style="margin:0 0 12px;box-shadow:none;border:1px solid var(--border-color);">
+                    <label class="form-label"><span data-i18n="usr.lbl.donor">المانح</span> <span class="required">*</span></label>
+                    <select id="ueDonor" class="form-input" required>${opts(meta.donors, 'id', 'name', null, r.donorId)}</select>
+                </div>
+                <div class="form-card" style="margin:0 0 12px;box-shadow:none;border:1px solid var(--border-color);">
+                    <label class="form-label"><span data-i18n="usr.lbl.supportType">نوع الدعم / القطاع</span> <span class="required">*</span></label>
+                    <select id="ueSector" class="form-input" required>${opts(meta.supportTypes, 'id', 'nameAr', 'nameEn', r.supportTypeId)}</select>
+                </div>
+                <div class="form-card" style="margin:0 0 12px;box-shadow:none;border:1px solid var(--border-color);">
+                    <label class="form-label"><span data-i18n="usr.lbl.partner">الشريك</span> <span class="required">*</span></label>
+                    <select id="uePartner" class="form-input" required>${opts(meta.partners, 'id', 'name', null, r.partnerId)}</select>
+                </div>
+                <div class="form-card" style="margin:0 0 12px;box-shadow:none;border:1px solid var(--border-color);">
+                    <label class="form-label"><span data-i18n="usr.lbl.month">الشهر</span> <span class="required">*</span></label>
+                    <select id="ueMonth" class="form-input" required>${opts(meta.months, 'id', 'nameAr', 'nameEn', r.monthId)}</select>
+                </div>
+                <div class="form-card" style="margin:0 0 12px;box-shadow:none;border:1px solid var(--border-color);">
+                    <label class="form-label"><span data-i18n="usr.lbl.year">السنة</span> <span class="required">*</span></label>
+                    <select id="ueYear" class="form-input" required>${(function(){ const now = new Date().getFullYear(); let s = ''; for (let y = now; y >= now - 6; y--) s += `<option value="${y}" ${y === r.year ? 'selected' : ''}>${y}</option>`; return s; })()}</select>
+                </div>
+                <div class="form-card" style="margin:0 0 12px;box-shadow:none;border:1px solid var(--border-color);">
+                    <label class="form-label"><span data-i18n="usr.lbl.amount">المبلغ المستلم بالجنيه</span> <span class="required">*</span></label>
+                    <input type="number" id="ueAmount" class="form-input" value="${r.amountReceived}" min="0" required>
+                </div>
+                <div class="form-card" style="margin:0 0 12px;box-shadow:none;border:1px solid var(--border-color);">
+                    <label class="form-label"><span data-i18n="usr.lbl.benTotal">عدد المستفيدين الإجمالي</span> <span class="required">*</span></label>
+                    <input type="number" id="ueBenTotal" class="form-input" value="${r.beneficiariesTotal}" min="0" required>
+                </div>
+                <div class="form-card" style="margin:0 0 12px;box-shadow:none;border:1px solid var(--border-color);">
+                    <label class="form-label"><span data-i18n="usr.lbl.benMale">عدد المستفيدين الذكور</span> <span class="required">*</span></label>
+                    <input type="number" id="ueBenMale" class="form-input" value="${r.beneficiariesMale}" min="0" required>
+                </div>
+                <div class="form-card" style="margin:0 0 12px;box-shadow:none;border:1px solid var(--border-color);">
+                    <label class="form-label"><span data-i18n="usr.lbl.benFemale">عدد المستفيدين الإناث</span> <span class="required">*</span></label>
+                    <input type="number" id="ueBenFemale" class="form-input" value="${r.beneficiariesFemale}" min="0" required>
+                </div>
+                <div class="form-card" style="margin:0 0 12px;box-shadow:none;border:1px solid var(--border-color);">
+                    <label class="form-label"><span data-i18n="usr.lbl.supportDetails">تفاصيل الدعم</span></label>
+                    <textarea id="ueDesc" class="form-textarea">${escapeHtml(r.supportDescription || '')}</textarea>
+                </div>
+                <div class="form-card" style="margin:0 0 12px;box-shadow:none;border:1px solid var(--border-color);">
+                    <label class="form-label"><span data-i18n="usr.lbl.challenges">التحديات</span> <span class="required">*</span></label>
+                    <textarea id="ueChallenges" class="form-textarea" required>${escapeHtml(r.challenges || '')}</textarea>
+                </div>
+                <div class="form-card" style="margin:0 0 12px;box-shadow:none;border:1px solid var(--border-color);">
+                    <label class="form-label"><span data-i18n="usr.lbl.outcomes">النتائج الإيجابية</span> <span class="required">*</span></label>
+                    <textarea id="ueOutcomes" class="form-textarea" required>${escapeHtml(r.positiveOutcomes || '')}</textarea>
+                </div>
+            `;
+            document.getElementById('editUserModal').classList.add('show');
+        }
+
+        function closeUserEditModal() {
+            document.getElementById('editUserModal').classList.remove('show');
+            editingMyReport = null;
+        }
+
+        async function saveUserEdit() {
+            if (!editingMyReport) return;
+            const payload = {
+                errName: document.getElementById('ueErrName').value,
+                donorId: parseInt(document.getElementById('ueDonor').value),
+                supportTypeId: parseInt(document.getElementById('ueSector').value),
+                partnerId: parseInt(document.getElementById('uePartner').value),
+                monthId: parseInt(document.getElementById('ueMonth').value),
+                year: parseInt(document.getElementById('ueYear').value),
+                amountReceived: parseFloat(document.getElementById('ueAmount').value),
+                beneficiariesTotal: parseInt(document.getElementById('ueBenTotal').value),
+                beneficiariesMale: parseInt(document.getElementById('ueBenMale').value),
+                beneficiariesFemale: parseInt(document.getElementById('ueBenFemale').value),
+                supportDescription: document.getElementById('ueDesc').value,
+                challenges: document.getElementById('ueChallenges').value,
+                positiveOutcomes: document.getElementById('ueOutcomes').value
+            };
+            const benTotal = payload.beneficiariesTotal;
+            if (benTotal !== payload.beneficiariesMale + payload.beneficiariesFemale) {
+                if (!confirm(I18N.t('usr.gender.warn'))) return;
+            }
+            try {
+                await API.request(`/reports/${editingMyReport.id}`, 'PUT', payload);
+                showToast(I18N.t('adm.toast.saved'));
+                closeUserEditModal();
+                loadMyReports();
+            } catch (err) {
+                showToast((err.data && err.data.error) || err.message, 'error');
+            }
         }
 
         async function resubmitReport(id) {
@@ -668,8 +800,23 @@
 
         I18N.onLangChange(async function() {
             if (currentUser && document.getElementById('formPage').style.display === 'block') {
+                const form = document.getElementById('reportForm');
+                const sel = {};
+                for (const name of ['localityId', 'donorId', 'supportTypeId', 'partnerId', 'monthId']) {
+                    const el = form.querySelector(`input[name="${name}"]:checked`);
+                    if (el) sel[name] = el.value;
+                }
+                const yr = document.getElementById('yearSelect').value;
                 await initForm();
+                for (const [name, v] of Object.entries(sel)) {
+                    const el = form.querySelector(`input[name="${name}"][value="${v}"]`);
+                    if (el) el.checked = true;
+                }
+                if (yr) document.getElementById('yearSelect').value = yr;
                 loadMyReports();
+                if (currentUser.role === 'locality_admin' && !document.getElementById('reviewSection').hidden) {
+                    loadReviewList();
+                }
             }
         });
     </script>

@@ -103,17 +103,71 @@ const server = app.listen(port, async () => {
     check('year filter 2025', y2025.data?.length >= 2);
     check('year filter 2024 empty', y2024.data?.length === 0);
 
+    // 5b. Same room+donor+month in a DIFFERENT year is allowed
+    const crossYear = await api('/api/reports', 'POST', {
+      errName: 'غرفة الفاشر', localityId: 1, donorId: 1, supportTypeId: 1,
+      supportDescription: '', partnerId: 1, monthId: 1, year: 2026,
+      amountReceived: 1000, beneficiariesTotal: 10, beneficiariesMale: 5, beneficiariesFemale: 5,
+      challenges: 'x', positiveOutcomes: 'y'
+    }, userToken);
+    check('same combo different year allowed', crossYear.status === 201, JSON.stringify(crossYear.data));
+
+    // 5c. Negative values rejected
+    const neg = await api('/api/reports', 'POST', {
+      errName: 'تقرير سالب', localityId: 1, donorId: 2, supportTypeId: 2,
+      supportDescription: '', partnerId: 1, monthId: 2, year: 2026,
+      amountReceived: -100, beneficiariesTotal: 10, beneficiariesMale: 5, beneficiariesFemale: 5,
+      challenges: 'x', positiveOutcomes: 'y'
+    }, userToken);
+    check('negative amount rejected', neg.status === 400);
+
+    // 5d. Non-admin cannot file outside own locality
+    const otherLoc = await api('/api/reports', 'POST', {
+      errName: 'تقرير خارج المحلية', localityId: 3, donorId: 2, supportTypeId: 2,
+      supportDescription: '', partnerId: 1, monthId: 3, year: 2026,
+      amountReceived: 100, beneficiariesTotal: 10, beneficiariesMale: 5, beneficiariesFemale: 5,
+      challenges: 'x', positiveOutcomes: 'y'
+    }, userToken);
+    check('cross-locality submission blocked', otherLoc.status === 403);
+
+    // 5e. PUT cannot create a duplicate
+    const putDup = await api(`/api/reports/${crossYear.data.id}`, 'PUT', {
+      monthId: 1, donorId: 1, year: 2025, errName: 'غرفة الفاشر'
+    }, userToken);
+    check('PUT duplicate blocked', putDup.status === 409, JSON.stringify(putDup.data));
+
+    // 5f. Locality admin can open a single report of own locality
+    const loc2rep = await api('/api/reports', 'POST', {
+      errName: 'غرفة فحص المحلية', localityId: 2, donorId: 1, supportTypeId: 1,
+      supportDescription: '', partnerId: 1, monthId: 3, year: 2026,
+      amountReceived: 100, beneficiariesTotal: 10, beneficiariesMale: 5, beneficiariesFemale: 5,
+      challenges: 'x', positiveOutcomes: 'y'
+    }, adminToken);
+    check('admin creates locality-2 report', loc2rep.status === 201);
+    const singleOwn = await api(`/api/reports/${loc2rep.data.id}`, 'GET', null, locToken);
+    check('locality admin opens own locality report', singleOwn.status === 200);
+    const singleOther = await api(`/api/reports/${crossYear.data.id}`, 'GET', null, locToken);
+    check('locality admin blocked from other locality', singleOther.status === 403);
+
+    // 5g. FK protection on deletes
+    const delDonor = await api('/api/settings/donors/1', 'DELETE', null, adminToken);
+    check('donor with reports cannot be deleted', delDonor.status === 409);
+    const delUser = await api(`/api/users/${user.data.user.id}`, 'DELETE', null, adminToken);
+    check('user with reports cannot be deleted', delUser.status === 409);
+
     // 6. Locality admin scope + review
     const locReports = await api('/api/reports', 'GET', null, locToken);
-    check('locality admin sees own locality only', locReports.data?.length === 0, JSON.stringify(locReports.data?.length));
+    check('locality admin sees own locality only', locReports.data?.length >= 1 && locReports.data.every(r => r.localityId === 2), JSON.stringify(locReports.data?.map(r => r.localityId)));
+    const locReports1 = await api('/api/reports', 'GET', null, userToken);
+    check('user sees only own reports', locReports1.data?.every(r => r.userId === uLogin.data.user.id), JSON.stringify(locReports1.data?.map(r => r.userId)));
 
     const r3 = await api('/api/reports', 'POST', {
       errName: 'غرفة ملط', localityId: 2, donorId: 1, supportTypeId: 1,
       supportDescription: '', partnerId: 1, monthId: 3, year: 2026,
       amountReceived: 300000, beneficiariesTotal: 300, beneficiariesMale: 150, beneficiariesFemale: 150,
       challenges: 'x', positiveOutcomes: 'y'
-    }, userToken);
-    check('create report locality 2', r3.status === 201);
+    }, adminToken);
+    check('create report locality 2 (admin)', r3.status === 201);
 
     const revWrong = await api(`/api/reports/${r3.data.id}/review`, 'POST', { status: 'approved' }, userToken);
     check('normal user cannot review', revWrong.status === 403);

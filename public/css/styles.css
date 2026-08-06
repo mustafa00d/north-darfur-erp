@@ -886,7 +886,7 @@ body {
 .summary-card.clickable { cursor: pointer; }
 .summary-card.clickable:hover { transform: translateY(-3px); }
 .summary-card.clickable::after {
-  content: '+';
+  content: '↗';
   position: absolute;
   top: 8px;
   inset-inline-end: 10px;
@@ -895,7 +895,7 @@ body {
   background: rgba(255,255,255,0.4);
   color: white;
   font-weight: 700;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   display: flex;
   align-items: center;
   justify-content: center;

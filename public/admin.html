@@ -443,7 +443,7 @@
                         </div>
                         <div class="summary-card red">
                             <div class="summary-number" id="opsPendingOld">0</div>
-                            <div class="summary-label" data-i18n="adm.ops.pendingOld">بانتظار المراجعة 7+ أيام</div>
+                            <div class="summary-label" data-i18n="adm.ops.pendingOld">بانتظار المراجعة أكثر من 7 أيام</div>
                         </div>
                     </div>
                     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:15px;">
@@ -856,10 +856,39 @@
                 return;
             }
             editingReport = r;
+            const opt = (items, valKey, labelAr, labelEn, selected) => {
+                const lang = I18N.getLang();
+                return items.map(it => {
+                    let text = it[labelAr] || it.name || '';
+                    if (lang === 'en' && labelEn && it[labelEn]) text = it[labelEn];
+                    const sel = it[valKey] === selected ? 'selected' : '';
+                    return `<option value="${it[valKey]}" ${sel}>${escapeHtml(text)}</option>`;
+                }).join('');
+            };
             document.getElementById('editModalBody').innerHTML = `
                 <div class="form-card" style="margin:0 0 12px;box-shadow:none;border:1px solid var(--border-color);">
                     <label class="form-label">${I18N.t('usr.lbl.errName')} <span class="required">*</span></label>
                     <input type="text" id="editErrName" class="form-input" value="${escapeHtml(r.errName)}">
+                </div>
+                <div class="form-card" style="margin:0 0 12px;box-shadow:none;border:1px solid var(--border-color);">
+                    <label class="form-label">${I18N.t('usr.lbl.donor')} <span class="required">*</span></label>
+                    <select id="editDonor" class="form-input">${opt(meta.donors, 'id', 'name', null, r.donorId)}</select>
+                </div>
+                <div class="form-card" style="margin:0 0 12px;box-shadow:none;border:1px solid var(--border-color);">
+                    <label class="form-label">${I18N.t('usr.lbl.supportType')} <span class="required">*</span></label>
+                    <select id="editSector" class="form-input">${opt(meta.supportTypes, 'id', 'nameAr', 'nameEn', r.supportTypeId)}</select>
+                </div>
+                <div class="form-card" style="margin:0 0 12px;box-shadow:none;border:1px solid var(--border-color);">
+                    <label class="form-label">${I18N.t('usr.lbl.partner')} <span class="required">*</span></label>
+                    <select id="editPartner" class="form-input">${opt(meta.partners, 'id', 'name', null, r.partnerId)}</select>
+                </div>
+                <div class="form-card" style="margin:0 0 12px;box-shadow:none;border:1px solid var(--border-color);">
+                    <label class="form-label">${I18N.t('usr.lbl.month')} <span class="required">*</span></label>
+                    <select id="editMonth" class="form-input">${opt(meta.months, 'id', 'nameAr', 'nameEn', r.monthId)}</select>
+                </div>
+                <div class="form-card" style="margin:0 0 12px;box-shadow:none;border:1px solid var(--border-color);">
+                    <label class="form-label">${I18N.t('usr.lbl.year')} <span class="required">*</span></label>
+                    <select id="editYear" class="form-input">${(function(){ const now = new Date().getFullYear(); let s = ''; for (let y = now; y >= now - 6; y--) s += `<option value="${y}" ${y === r.year ? 'selected' : ''}>${y}</option>`; return s; })()}</select>
                 </div>
                 <div class="form-card" style="margin:0 0 12px;box-shadow:none;border:1px solid var(--border-color);">
                     <label class="form-label">${I18N.t('adm.view.details')}</label>
@@ -872,6 +901,14 @@
                 <div class="form-card" style="margin:0 0 12px;box-shadow:none;border:1px solid var(--border-color);">
                     <label class="form-label">${I18N.t('usr.lbl.benTotal')} <span class="required">*</span></label>
                     <input type="number" id="editBenefTotal" class="form-input" value="${r.beneficiariesTotal}" min="0">
+                </div>
+                <div class="form-card" style="margin:0 0 12px;box-shadow:none;border:1px solid var(--border-color);">
+                    <label class="form-label">${I18N.t('usr.lbl.benMale')} <span class="required">*</span></label>
+                    <input type="number" id="editBenefMale" class="form-input" value="${r.beneficiariesMale}" min="0">
+                </div>
+                <div class="form-card" style="margin:0 0 12px;box-shadow:none;border:1px solid var(--border-color);">
+                    <label class="form-label">${I18N.t('usr.lbl.benFemale')} <span class="required">*</span></label>
+                    <input type="number" id="editBenefFemale" class="form-input" value="${r.beneficiariesFemale}" min="0">
                 </div>
                 <div class="form-card" style="margin:0 0 12px;box-shadow:none;border:1px solid var(--border-color);">
                     <label class="form-label">${I18N.t('usr.lbl.challenges')}</label>
@@ -890,9 +927,16 @@
             try {
                 await API.request(`/reports/${editingReport.id}`, 'PUT', {
                     errName: document.getElementById('editErrName').value,
+                    donorId: parseInt(document.getElementById('editDonor').value),
+                    supportTypeId: parseInt(document.getElementById('editSector').value),
+                    partnerId: parseInt(document.getElementById('editPartner').value),
+                    monthId: parseInt(document.getElementById('editMonth').value),
+                    year: parseInt(document.getElementById('editYear').value),
                     supportDescription: document.getElementById('editSupportDesc').value,
                     amountReceived: parseFloat(document.getElementById('editAmount').value),
                     beneficiariesTotal: parseInt(document.getElementById('editBenefTotal').value),
+                    beneficiariesMale: parseInt(document.getElementById('editBenefMale').value),
+                    beneficiariesFemale: parseInt(document.getElementById('editBenefFemale').value),
                     challenges: document.getElementById('editChallenges').value,
                     positiveOutcomes: document.getElementById('editOutcomes').value
                 });
@@ -900,7 +944,7 @@
                 closeEditModal();
                 loadReports();
                 loadActivity();
-            } catch (e) { showToast(e.message, 'error'); }
+            } catch (e) { showToast((e.data && e.data.error) || e.message, 'error'); }
         }
 
         function closeEditModal() {
@@ -1279,11 +1323,16 @@
 
             document.querySelector('.dashboard-title p').textContent = data.link.name;
             if (data.permissions.analytics) {
+                const gTotal = (Number(data.totalMale) || 0) + (Number(data.totalFemale) || 0);
+                const femaleChip = gTotal > 0
+                    ? `<div class="summary-card red"><div class="summary-number">${Math.round(Number(data.totalFemale) / gTotal * 100)}%</div><div class="summary-label">${I18N.t('adm.shareview.femaleShare')}</div></div>`
+                    : '';
                 const summaryHtml = `
                     <div class="summary-cards" id="shareSummaryWrap" style="padding-top:20px;">
                         <div class="summary-card"><div class="summary-number">${formatNumber(data.summary)}</div><div class="summary-label">${I18N.t('adm.shareview.approvedReports')}</div></div>
                         <div class="summary-card green"><div class="summary-number">${formatNumber(data.totalAmount)}</div><div class="summary-label">${I18N.t('adm.shareview.totalAmount')}</div></div>
                         <div class="summary-card blue"><div class="summary-number">${formatNumber(data.totalBeneficiaries)}</div><div class="summary-label">${I18N.t('adm.shareview.totalBen')}</div></div>
+                        ${femaleChip}
                     </div>
                 `;
                 dash.insertAdjacentHTML('afterbegin', summaryHtml);
@@ -1609,13 +1658,13 @@
         function exportToCSV() {
             if (!allReports.length) { showToast(I18N.t('adm.export.noData'), 'error'); return; }
             const headers = [
-                I18N.t('adm.csv.date'), I18N.t('adm.csv.err'), I18N.t('adm.csv.locality'), I18N.t('adm.csv.donor'),
+                I18N.t('adm.csv.date'), I18N.t('adm.reports.th.ref'), I18N.t('adm.csv.year'), I18N.t('adm.csv.err'), I18N.t('adm.csv.locality'), I18N.t('adm.csv.donor'),
                 I18N.t('adm.csv.sector'), I18N.t('adm.csv.partner'), I18N.t('adm.csv.month'), I18N.t('adm.csv.amount'),
                 I18N.t('adm.csv.benTotal'), I18N.t('adm.csv.benMale'), I18N.t('adm.csv.benFemale'),
                 I18N.t('adm.csv.challenges'), I18N.t('adm.csv.outcomes'), I18N.t('adm.csv.details'), I18N.t('adm.csv.status')
             ];
             const rows = allReports.map(r => [
-                r.createdAt, r.errName, I18N.pick(r.localityAr, r.localityEn), r.donorName, I18N.pick(r.supportAr, r.supportEn), r.partnerName,
+                r.createdAt, r.refCode || '', r.year || '', r.errName, I18N.pick(r.localityAr, r.localityEn), r.donorName, I18N.pick(r.supportAr, r.supportEn), r.partnerName,
                 monthName(r.monthId), r.amountReceived, r.beneficiariesTotal, r.beneficiariesMale,
                 r.beneficiariesFemale, r.challenges, r.positiveOutcomes, r.supportDescription,
                 r.status === 'approved' ? I18N.t('status.approved') : r.status === 'rejected' ? I18N.t('status.rejected') : I18N.t('status.submitted')

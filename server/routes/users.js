@@ -95,6 +95,10 @@ router.delete('/:id', asyncHandler(async (req, res) => {
   if (user.id === req.user.id) {
     return res.status(400).json({ error: 'لا يمكنك حذف حسابك الخاص' });
   }
+  const ref = await db.get('SELECT COUNT(*) AS c FROM reports WHERE user_id = ?', [user.id]);
+  if (ref.c > 0) {
+    return res.status(409).json({ error: `لا يمكن الحذف: لدى المستخدم ${ref.c} تقرير مرتبط. احذف تقاريره أو اترك حسابه معطلاً` });
+  }
 
   await db.run('DELETE FROM users WHERE id = ?', [user.id]);
   await logActivity(req.user, 'حذف مستخدم', 'user', user.id, user.name);

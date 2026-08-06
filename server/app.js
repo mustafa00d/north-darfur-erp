@@ -45,6 +45,16 @@ const loginLimiter = rateLimit({
 });
 app.use('/api/auth/login', loginLimiter);
 
+// تحديد معدل محاولات فتح روابط المشاركة المحمية (حماية من القوة العمياء)
+const shareAuthLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'محاولات كثيرة، حاول بعد 15 دقيقة' }
+});
+app.use('/api/share/public/:token/auth', shareAuthLimiter);
+
 // API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/meta', metaRoutes);

@@ -33,6 +33,10 @@ router.put('/localities/:id', asyncHandler(async (req, res) => {
 }));
 
 router.delete('/localities/:id', asyncHandler(async (req, res) => {
+  const ref = await db.get('SELECT COUNT(*) AS c FROM reports WHERE locality_id = ?', [req.params.id]);
+  if (ref.c > 0) {
+    return res.status(409).json({ error: `لا يمكن الحذف: توجد ${ref.c} تقارير مرتبطة بهذه المحلية` });
+  }
   await db.run('DELETE FROM localities WHERE id = ?', [req.params.id]);
   await logActivity(req.user, 'حذف محلية', 'locality', Number(req.params.id));
   res.json({ success: true });
@@ -62,6 +66,10 @@ router.put('/donors/:id', asyncHandler(async (req, res) => {
 }));
 
 router.delete('/donors/:id', asyncHandler(async (req, res) => {
+  const ref = await db.get('SELECT COUNT(*) AS c FROM reports WHERE donor_id = ?', [req.params.id]);
+  if (ref.c > 0) {
+    return res.status(409).json({ error: `لا يمكن الحذف: توجد ${ref.c} تقارير مرتبطة بهذا المانح` });
+  }
   await db.run('DELETE FROM donors WHERE id = ?', [req.params.id]);
   await logActivity(req.user, 'حذف مانح', 'donor', Number(req.params.id));
   res.json({ success: true });
@@ -84,6 +92,10 @@ router.post('/partners', asyncHandler(async (req, res) => {
 }));
 
 router.delete('/partners/:id', asyncHandler(async (req, res) => {
+  const ref = await db.get('SELECT COUNT(*) AS c FROM reports WHERE partner_id = ?', [req.params.id]);
+  if (ref.c > 0) {
+    return res.status(409).json({ error: `لا يمكن الحذف: توجد ${ref.c} تقارير مرتبطة بهذا الشريك` });
+  }
   await db.run('DELETE FROM partners WHERE id = ?', [req.params.id]);
   await logActivity(req.user, 'حذف شريك', 'partner', Number(req.params.id));
   res.json({ success: true });

@@ -265,7 +265,7 @@
       'adm.ops.avgReview': 'متوسط زمن المراجعة',
       'adm.ops.approvalRate': 'نسبة الموافقة',
       'adm.ops.pending': 'قيد المراجعة',
-      'adm.ops.pendingOld': 'بانتظار المراجعة 7+ أيام',
+      'adm.ops.pendingOld': 'بانتظار المراجعة أكثر من 7 أيام',
       'adm.ops.reasons': 'أسباب الرفض الأكثر تكراراً',
       'adm.ops.reviewers': 'نشاط المراجعين',
       'adm.ops.noReasons': 'لا توجد أسباب مسجلة',
@@ -296,6 +296,7 @@
       'adm.export.noData': 'لا توجد بيانات للتصدير',
       'adm.export.saved': 'تم تصدير البيانات',
       'adm.csv.date': 'التاريخ',
+      'adm.csv.year': 'السنة',
       'adm.csv.err': 'اسم الغرفة',
       'adm.csv.locality': 'المحلية',
       'adm.csv.donor': 'المانح',
@@ -398,6 +399,7 @@
       'usr.review.approved': 'تمت الموافقة على التقرير',
       'usr.review.rejected': 'تم رفض التقرير',
       'usr.review.empty': 'لا توجد تقارير بانتظار المراجعة',
+      'usr.edit.title': 'تعديل التقرير',
 
       // Share viewer
       'shr.title': 'بيانات مشتركة',
@@ -703,6 +705,7 @@
       'adm.export.noData': 'No data to export',
       'adm.export.saved': 'Data exported',
       'adm.csv.date': 'Date',
+      'adm.csv.year': 'Year',
       'adm.csv.err': 'Room Name',
       'adm.csv.locality': 'Locality',
       'adm.csv.donor': 'Donor',
@@ -805,6 +808,7 @@
       'usr.review.approved': 'Report approved',
       'usr.review.rejected': 'Report rejected',
       'usr.review.empty': 'No reports awaiting review',
+      'usr.edit.title': 'Edit Report',
 
       // Share viewer
       'shr.title': 'Shared Data',

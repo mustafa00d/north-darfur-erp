@@ -36,6 +36,9 @@ router.get('/', asyncHandler(async (req, res) => {
 router.post('/restore', asyncHandler(async (req, res) => {
   const b = req.body || {};
   const t = b.tables;
+  if (b.app !== 'north-darfur-erp' || typeof b.version !== 'number' || b.version < 1) {
+    return res.status(400).json({ error: 'هذا الملف ليس نسخة احتياطية من النظام' });
+  }
   if (!t || !Array.isArray(t.users) || !Array.isArray(t.reports) || !Array.isArray(t.localities)
       || !Array.isArray(t.donors) || !Array.isArray(t.partners) || !Array.isArray(t.supportTypes)
       || !Array.isArray(t.activityLog) || !Array.isArray(t.notifications) || !Array.isArray(t.shareLinks)) {

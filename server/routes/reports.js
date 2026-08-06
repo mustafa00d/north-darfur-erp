@@ -15,11 +15,11 @@ const REPORT_SELECT = `
     p.name AS partner_name,
     ru.name AS reviewer_name
   FROM reports r
-  JOIN users u ON u.id = r.user_id
-  JOIN localities l ON l.id = r.locality_id
-  JOIN donors d ON d.id = r.donor_id
-  JOIN support_types s ON s.id = r.support_type_id
-  JOIN partners p ON p.id = r.partner_id
+  LEFT JOIN users u ON u.id = r.user_id
+  LEFT JOIN localities l ON l.id = r.locality_id
+  LEFT JOIN donors d ON d.id = r.donor_id
+  LEFT JOIN support_types s ON s.id = r.support_type_id
+  LEFT JOIN partners p ON p.id = r.partner_id
   LEFT JOIN users ru ON ru.id = r.reviewed_by
 `;
 
@@ -97,7 +97,12 @@ router.get('/', asyncHandler(async (req, res) => {
   if (monthId) { where.push('r.month_id = @mon'); params.mon = monthId; }
   if (year) { where.push('r.year = @yr'); params.yr = year; }
   if (from) { where.push('r.created_at >= @from'); params.from = new Date(from).toISOString(); }
-  if (to) { where.push('r.created_at <= @to'); params.to = new Date(to).toISOString(); }
+  if (to) {
+    const toEnd = new Date(to);
+    toEnd.setDate(toEnd.getDate() + 1);
+    where.push('r.created_at < @to');
+    params.to = toEnd.toISOString();
+  }
   if (status) { where.push('r.status = @st'); params.st = status; }
   if (search) {
     where.push('(r.err_name LIKE @q OR l.name_ar LIKE @q OR d.name LIKE @q)');
@@ -109,13 +114,16 @@ router.get('/', asyncHandler(async (req, res) => {
   res.json(rows.map(serialize));
 }));
 
-// GET single report
+// GET single report (admin: all; locality_admin: own locality; user: own)
 router.get('/:id', asyncHandler(async (req, res) => {
   const row = await db.get(`${REPORT_SELECT} WHERE r.id = ?`, [req.params.id]);
   if (!row) {
     return res.status(404).json({ error: 'التقرير غير موجود' });
   }
-  if (req.user.role !== 'admin' && row.user_id !== req.user.id) {
+  const allowed = req.user.role === 'admin'
+    || (req.user.role === 'locality_admin' && req.user.locality_id === row.locality_id)
+    || row.user_id === req.user.id;
+  if (!allowed) {
     return res.status(403).json({ error: 'غير مصرح' });
   }
   res.json(serialize(row));
@@ -133,16 +141,41 @@ router.post('/', asyncHandler(async (req, res) => {
     }
   }
 
-  // التحقق من التكرار (نفس الغرفة + الشهر + المانح)
+  // التحقق من صحة الأرقام
+  const nums = {
+    amountReceived: parseFloat(b.amountReceived),
+    beneficiariesTotal: parseInt(b.beneficiariesTotal),
+    beneficiariesMale: parseInt(b.beneficiariesMale),
+    beneficiariesFemale: parseInt(b.beneficiariesFemale)
+  };
+  for (const [k, v] of Object.entries(nums)) {
+    if (!isFinite(v) || v < 0) {
+      return res.status(400).json({ error: `قيمة غير صالحة للحقل: ${k}` });
+    }
+  }
+  const monthNum = parseInt(b.monthId);
+  if (!monthNum || monthNum < 1 || monthNum > 12) {
+    return res.status(400).json({ error: 'الشهر غير صالح (1-12)' });
+  }
+  if (nums.amountReceived > 1000000000) {
+    return res.status(400).json({ error: 'المبلغ أكبر من الحد المسموح (مليار)' });
+  }
+
+  // غير المدير يجب أن يرسل لمحليته فقط
+  if (req.user.role !== 'admin' && Number(b.localityId) !== Number(req.user.locality_id)) {
+    return res.status(403).json({ error: 'يمكنك إرسال التقارير لمحليتك فقط' });
+  }
+
+  // التحقق من التكرار (نفس الغرفة + الشهر + المانح + السنة)
   if (!b.force) {
     const dup = await db.get(
       `SELECT id FROM reports WHERE LOWER(TRIM(err_name)) = LOWER(TRIM(@n))
-       AND month_id = @m AND donor_id = @d`,
-      { n: String(b.errName), m: b.monthId, d: b.donorId }
+       AND month_id = @m AND donor_id = @d AND year = @yr`,
+      { n: String(b.errName), m: b.monthId, d: b.donorId, yr: parseInt(b.year) || new Date().getFullYear() }
     );
     if (dup) {
       return res.status(409).json({
-        error: 'يوجد تقرير مطابق مسبقاً (نفس الغرفة والشهر والمانح). أرسل القوة لمواصلة الإرسال.',
+        error: 'يوجد تقرير مطابق مسبقاً (نفس الغرفة والشهر والمانح والسنة). أرسل القوة لمواصلة الإرسال.',
         duplicate: true, duplicateId: dup.id
       });
     }
@@ -158,10 +191,10 @@ router.post('/', asyncHandler(async (req, res) => {
       beneficiaries_male, beneficiaries_female, challenges, positive_outcomes, status
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'submitted')
   `, [
-    req.user.id, b.errName, b.localityId, b.donorId, b.supportTypeId,
-    b.supportDescription || '', b.partnerId, b.monthId, year, refCode,
-    parseFloat(b.amountReceived) || 0, parseInt(b.beneficiariesTotal) || 0,
-    parseInt(b.beneficiariesMale) || 0, parseInt(b.beneficiariesFemale) || 0,
+    req.user.id, b.errName, Number(b.localityId), b.donorId, b.supportTypeId,
+    b.supportDescription || '', b.partnerId, monthNum, year, refCode,
+    nums.amountReceived, nums.beneficiariesTotal,
+    nums.beneficiariesMale, nums.beneficiariesFemale,
     b.challenges, b.positiveOutcomes
   ]);
 
@@ -213,6 +246,52 @@ router.put('/:id', asyncHandler(async (req, res) => {
   }
 
   const b = req.body || {};
+
+  // غير المدير لا يغير المحلية خارج نطاقه
+  if (req.user.role !== 'admin' && b.localityId !== undefined && Number(b.localityId) !== Number(req.user.locality_id)) {
+    return res.status(403).json({ error: 'يمكنك تعديل تقارير محليتك فقط' });
+  }
+
+  // التحقق من صحة الأرقام عند التعديل
+  for (const [k, v] of [['amountReceived', b.amountReceived], ['beneficiariesTotal', b.beneficiariesTotal],
+    ['beneficiariesMale', b.beneficiariesMale], ['beneficiariesFemale', b.beneficiariesFemale]]) {
+    if (v !== undefined) {
+      const n = parseFloat(v);
+      if (!isFinite(n) || n < 0) {
+        return res.status(400).json({ error: `قيمة غير صالحة للحقل: ${k}` });
+      }
+    }
+  }
+  if (b.monthId !== undefined) {
+    const m = parseInt(b.monthId);
+    if (!m || m < 1 || m > 12) {
+      return res.status(400).json({ error: 'الشهر غير صالح (1-12)' });
+    }
+  }
+
+  // فحص التكرار عند التعديل (نفس الغرفة + الشهر + المانح + السنة) باستثناء التقرير نفسه
+  const finalErr = b.errName !== undefined ? b.errName : row.err_name;
+  const finalMonth = b.monthId !== undefined ? parseInt(b.monthId) : row.month_id;
+  const finalDonor = b.donorId !== undefined ? b.donorId : row.donor_id;
+  const finalYear = b.year !== undefined ? (parseInt(b.year) || row.year) : row.year;
+  const dup = await db.get(
+    `SELECT id FROM reports WHERE LOWER(TRIM(err_name)) = LOWER(TRIM(@n))
+     AND month_id = @m AND donor_id = @d AND year = @yr AND id != @id`,
+    { n: String(finalErr), m: finalMonth, d: finalDonor, yr: finalYear, id: row.id }
+  );
+  if (dup) {
+    return res.status(409).json({
+      error: 'يوجد تقرير مطابق مسبقاً (نفس الغرفة والشهر والمانح والسنة).',
+      duplicate: true, duplicateId: dup.id
+    });
+  }
+
+  // تغيير السنة يولد رقماً مرجعياً جديداً
+  if (finalYear !== row.year) {
+    await db.run('UPDATE reports SET ref_code = ?, year = ? WHERE id = ?',
+      [await generateRefCode(db, finalYear), finalYear, row.id]);
+  }
+
   const fields = {
     err_name: b.errName, locality_id: b.localityId, donor_id: b.donorId,
     support_type_id: b.supportTypeId, support_description: b.supportDescription,
