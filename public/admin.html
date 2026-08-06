@@ -639,6 +639,7 @@
                 loadAiSettings()
             ]);
             populateAiAnalysisSelectors();
+            if (window.initChatWidget) window.initChatWidget();
         }
 
         async function loadAnalytics() {

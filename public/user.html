@@ -329,6 +329,7 @@
                 loadReviewList();
             }
             setInterval(loadNotifications, 60000);
+            if (window.initChatWidget) window.initChatWidget();
         }
 
         async function loadMyStats() {

@@ -140,10 +140,25 @@ const server = app.listen(port, async () => {
 
     // 6. مساعد المحادثة
     const chat1 = await api('/api/ai/chat', 'POST', { message: 'كيف أضيف تقريرا؟' }, userToken);
-    check('chat answers how-to', chat1.status === 200 && chat1.data.reply.length > 20, JSON.stringify(chat1.data));
+    check('chat answers how-to', chat1.status === 200 && chat1.data.reply.includes('تقرير'), JSON.stringify(chat1.data));
 
     const chat2 = await api('/api/ai/chat', 'POST', { message: 'كم تقريرا سجلت؟' }, userToken);
-    check('chat answers stats', chat2.status === 200 && chat2.data.reply.includes('1'), JSON.stringify(chat2.data));
+    check('chat answers user stats', chat2.status === 200 && chat2.data.reply.includes('تقريراً'), JSON.stringify(chat2.data));
+
+    const chat3 = await api('/api/ai/chat', 'POST', { message: 'كم إجمالي النظام؟' }, adminToken);
+    check('chat answers system totals (admin)', chat3.status === 200 && chat3.data.reply.includes('النظام'), JSON.stringify(chat3.data));
+
+    const chat4 = await api('/api/ai/chat', 'POST', { message: 'كم تقريرا لمحليتي؟' }, locToken);
+    check('chat answers locality stats (loc admin)', chat4.status === 200 && chat4.data.reply.includes('محليتك'), JSON.stringify(chat4.data));
+
+    const chat5 = await api('/api/ai/chat', 'POST', { message: 'ما دوري في المراجعة؟' }, locToken);
+    check('chat answers review role (loc admin)', chat5.status === 200 && chat5.data.reply.includes('مشرف محلية'), JSON.stringify(chat5.data));
+
+    const chat6 = await api('/api/ai/chat', 'POST', { message: 'ماذا أفعل بتقرير مرفوض؟' }, userToken);
+    check('chat answers rejected flow', chat6.status === 200 && chat6.data.reply.includes('إعادة إرسال'), JSON.stringify(chat6.data));
+
+    const chat7 = await api('/api/ai/chat', 'POST', { message: 'ما لون السماء في المريخ؟' }, userToken);
+    check('chat unknown question falls back gracefully', chat7.status === 200 && chat7.data.reply.includes('لم أجد إجابة'), JSON.stringify(chat7.data));
 
     const chatEmpty = await api('/api/ai/chat', 'POST', { message: '   ' }, userToken);
     check('empty chat rejected', chatEmpty.status === 400);
