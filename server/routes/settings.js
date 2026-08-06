@@ -10,7 +10,7 @@ router.use(requireAdmin);
 // ==================== Localities ====================
 
 router.get('/localities', asyncHandler(async (req, res) => {
-  res.json(await db.all('SELECT id, name_ar AS nameAr, name_en AS nameEn, color FROM localities ORDER BY id'));
+  res.json(await db.all('SELECT id, name_ar AS "nameAr", name_en AS "nameEn", color FROM localities ORDER BY id'));
 }));
 
 router.post('/localities', asyncHandler(async (req, res) => {

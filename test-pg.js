@@ -96,6 +96,10 @@ check('translate named', t2.sql === 'SELECT * FROM x WHERE a = $1 AND b LIKE $2'
 // 12. MONTHS مستوردة
 check('months exported', MONTHS.length === 12);
 
+// 13. الحفاظ على حالة أسماء الأعمدة camelCase (PostgreSQL يحوّلها لأحرف صغيرة بدون اقتباس)
+const camel = await layer.all('SELECT id, name_ar AS "nameAr", name_en AS "nameEn", color FROM localities ORDER BY id LIMIT 1');
+check('camelCase aliases preserved', camel.length === 1 && camel[0].nameAr && camel[0].nameEn, JSON.stringify(camel[0]));
+
 console.log(`\n===== PG: ${pass} ناجح / ${fail} فشل =====`);
 await pg.close();
 process.exit(fail > 0 ? 1 : 0);

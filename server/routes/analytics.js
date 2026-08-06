@@ -29,9 +29,9 @@ router.get('/summary', asyncHandler(async (req, res) => {
 // Detailed stats (authenticated)
 router.get('/stats', requireAuth, asyncHandler(async (req, res) => {
   const [localities, donors, sectors] = await Promise.all([
-    db.all('SELECT id, name_ar AS nameAr, name_en AS nameEn, color FROM localities ORDER BY id'),
+    db.all('SELECT id, name_ar AS "nameAr", name_en AS "nameEn", color FROM localities ORDER BY id'),
     db.all('SELECT id, name, color FROM donors ORDER BY id'),
-    db.all('SELECT id, name_ar AS nameAr, name_en AS nameEn, icon, color FROM support_types ORDER BY id')
+    db.all('SELECT id, name_ar AS "nameAr", name_en AS "nameEn", icon, color FROM support_types ORDER BY id')
   ]);
 
   // Build stats maps seeded with zeros
