@@ -135,6 +135,40 @@ const server = app.listen(port, async () => {
     const review = await api(`/api/reports/${reportId}/review`, 'POST', { status: 'approved', note: 'تم التحقق' }, adminToken);
     check('review approve', review.status === 200);
 
+    // 13b. Lock while under review
+    const locAdmin = await api('/api/users', 'POST', { email: 'locadmin1@ndr.org', password: 'locadmin123', name: 'مشرف الفاشر', localityId: 1, role: 'locality_admin' }, adminToken);
+    check('create locality admin', locAdmin.status === 201);
+    const report2 = await api('/api/reports', 'POST', {
+      errName: 'غرفة طوارئ الفاشر 2', localityId: 1, donorId: 2, supportTypeId: 2,
+      supportDescription: 'توزيع أدوية', partnerId: 1, monthId: 9, year: 2026,
+      amountReceived: 700000, beneficiariesTotal: 2000,
+      beneficiariesMale: 900, beneficiariesFemale: 1100,
+      challenges: 'طقس', positiveOutcomes: 'وصول'
+    }, userToken);
+    check('second report created', report2.status === 201);
+    const rep2Id = report2.data?.id;
+    const startRev = await api(`/api/reports/${rep2Id}/start-review`, 'POST', null, adminToken);
+    check('start review marks lock', startRev.status === 200);
+    const editLocked = await api(`/api/reports/${rep2Id}`, 'PUT', { supportDescription: 'محاولة تعديل أثناء المراجعة' }, userToken);
+    check('edit blocked while under review', editLocked.status === 403);
+    const locAdminLogin = await api('/api/auth/login', 'POST', { email: 'locadmin1@ndr.org', password: 'locadmin123' });
+    const locAdminToken = locAdminLogin.data?.token;
+    const locNotifs = await api('/api/notifications', 'GET', null, locAdminToken);
+    check('locality admin got new-report notification', locNotifs.data?.some(n => n.message.includes('غرفة طوارئ الفاشر 2')));
+    const startRevByUser = await api(`/api/reports/${rep2Id}/start-review`, 'POST', null, userToken);
+    check('start-review reviewer only', startRevByUser.status === 403);
+    const editByAdminWhileLocked = await api(`/api/reports/${rep2Id}`, 'PUT', { supportDescription: 'تعديل المدير مسموح' }, adminToken);
+    check('admin edit allowed while locked', editByAdminWhileLocked.status === 200);
+
+    // 13c. Reject -> resubmit clears the lock
+    const rej2 = await api(`/api/reports/${rep2Id}/review`, 'POST', { status: 'rejected', note: 'ناقص' }, adminToken);
+    check('reject second report', rej2.status === 200);
+    const resub2 = await api(`/api/reports/${rep2Id}/resubmit`, 'POST', null, userToken);
+    const afterResub = await api(`/api/reports/${rep2Id}`, 'GET', null, userToken);
+    check('resubmit clears review lock', resub2.status === 200 && !afterResub.data.reviewStartedAt);
+    const editAfterResub = await api(`/api/reports/${rep2Id}`, 'PUT', { supportDescription: 'تعديل بعد إعادة الإرسال' }, userToken);
+    check('edit allowed after resubmit (lock cleared)', editAfterResub.status === 200);
+
     // 14. Notification created for user
     const notifs = await api('/api/notifications', 'GET', null, userToken);
     check('user got notification', notifs.data?.some(n => n.type === 'success'));

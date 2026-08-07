@@ -548,7 +548,8 @@
                         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
                             ${r.refCode ? `<span class="status-badge" style="background:#EDE7F6;color:#673AB7;">${escapeHtml(r.refCode)}</span>` : ''}
                             ${statusBadge(r.status)}
-                            ${r.status !== 'approved' ? `<button class="btn btn-outline" style="padding:4px 12px;font-size:0.8rem;" onclick="openUserEditModal(${r.id})">${I18N.t('edit')}</button>` : ''}
+                            ${r.status === 'submitted' && r.reviewStartedAt ? `<span class="status-badge" style="background:#FEF3C7;color:#92400E;" data-i18n="usr.lock.badge">قيد المراجعة</span>` : ''}
+                            ${r.status !== 'approved' && !(r.status === 'submitted' && r.reviewStartedAt) ? `<button class="btn btn-outline" style="padding:4px 12px;font-size:0.8rem;" onclick="openUserEditModal(${r.id})">${I18N.t('edit')}</button>` : ''}
                             ${r.status === 'rejected' ? `<button class="btn btn-primary" style="padding:4px 12px;font-size:0.8rem;" onclick="resubmitReport(${r.id})">${I18N.t('usr.resubmit')}</button>` : ''}
                         </div>
                     </div>
@@ -563,6 +564,10 @@
                 r = await API.request(`/reports/${id}`);
             } catch (e) {
                 showToast((e.data && e.data.error) || e.message, 'error');
+                return;
+            }
+            if (r.status === 'submitted' && r.reviewStartedAt) {
+                showToast(I18N.t('usr.lock.cannotEdit'), 'error');
                 return;
             }
             editingMyReport = r;

@@ -1007,7 +1007,7 @@
                     <td>${escapeHtml(I18N.pick(r.supportAr, r.supportEn))}</td>
                     <td>${formatNumber(r.amountReceived)}</td>
                     <td>${formatNumber(r.beneficiariesTotal)}</td>
-                    <td>${statusBadge(r.status)}</td>
+                    <td>${statusBadge(r.status)}${r.status === 'submitted' && r.reviewStartedAt ? `<br><small style="color:#92400E;font-size:0.75rem;" data-i18n="usr.lock.badge">قيد المراجعة</small>` : ''}</td>
                     <td>
                         <div class="actions-cell">
                             <button class="btn btn-outline" onclick="viewReport(${r.id})">${I18N.t('view')}</button>
@@ -1053,6 +1053,11 @@
                 <button class="btn btn-outline" onclick="closeReportModal()">${I18N.t('close')}</button>
             `;
             document.getElementById('reportModal').classList.add('show');
+            if (r.status === 'submitted' && !r.reviewStartedAt) {
+                API.request(`/reports/${id}/start-review`, 'POST').then(() => {
+                    r.reviewStartedAt = new Date().toISOString();
+                }).catch(() => {});
+            }
         }
 
         async function reviewReport(id, status) {

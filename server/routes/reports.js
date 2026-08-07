@@ -56,6 +56,7 @@ function serialize(row) {
     challenges: row.challenges,
     positiveOutcomes: row.positive_outcomes,
     status: row.status,
+    reviewStartedAt: row.review_started_at,
     reviewedBy: row.reviewed_by,
     reviewedAt: row.reviewed_at,
     reviewerName: row.reviewer_name,
@@ -127,6 +128,23 @@ router.get('/:id', asyncHandler(async (req, res) => {
     return res.status(403).json({ error: 'غير مصرح' });
   }
   res.json(serialize(row));
+}));
+
+// POST start review: يعلّم بداية المراجعة (يقفل التعديل على المالك) — للمراجع فقط
+router.post('/:id/start-review', asyncHandler(async (req, res) => {
+  const row = await db.get('SELECT * FROM reports WHERE id = ?', [req.params.id]);
+  if (!row) {
+    return res.status(404).json({ error: 'التقرير غير موجود' });
+  }
+  const canReview = req.user.role === 'admin'
+    || (req.user.role === 'locality_admin' && req.user.locality_id === row.locality_id);
+  if (!canReview) {
+    return res.status(403).json({ error: 'غير مصرح' });
+  }
+  if (row.status === 'submitted' && !row.review_started_at) {
+    await db.run('UPDATE reports SET review_started_at = ? WHERE id = ?', [new Date().toISOString(), row.id]);
+  }
+  res.json({ success: true });
 }));
 
 // POST new report
@@ -201,6 +219,19 @@ router.post('/', asyncHandler(async (req, res) => {
   await logActivity(req.user, 'إضافة تقرير', 'report', result.lastInsertRowid, `${b.errName} (${refCode})`);
   await notifyAdmins('تقرير جديد', `أضاف ${req.user.name} تقريراً جديداً: ${b.errName} (${refCode})`);
 
+  // إشعار فوري لمشرف المحلية صاحب التقرير
+  try {
+    const locName = (await db.get('SELECT name_ar AS n FROM localities WHERE id = ?', [Number(b.localityId)]))?.n || '';
+    const locAdmins = await db.all(
+      "SELECT id FROM users WHERE role = 'locality_admin' AND locality_id = ? AND active = 1",
+      [Number(b.localityId)]
+    );
+    for (const la of locAdmins) {
+      if (la.id === req.user.id) continue;
+      await createNotification(la.id, 'تقرير جديد في محليتك', `أرسل ${req.user.name} تقريراً جديداً لمحلية ${locName}: ${b.errName} (${refCode})`, 'info');
+    }
+  } catch (e) { /* فشل الإشعار لا يمنع الإرسال */ }
+
   const admins = await db.all("SELECT email FROM users WHERE role = 'admin' AND active = 1");
   if (admins.length) {
     await sendNewReportEmail(admins, req.user.name, b.errName, refCode);
@@ -224,7 +255,7 @@ router.post('/:id/resubmit', asyncHandler(async (req, res) => {
   }
 
   await db.run(
-    "UPDATE reports SET status = 'submitted', reviewed_by = NULL, reviewed_at = NULL, review_note = NULL, updated_at = ? WHERE id = ?",
+    "UPDATE reports SET status = 'submitted', reviewed_by = NULL, reviewed_at = NULL, review_note = NULL, review_started_at = NULL, updated_at = ? WHERE id = ?",
     [new Date().toISOString(), row.id]
   );
   await logActivity(req.user, 'إعادة إرسال تقرير', 'report', row.id, row.err_name);
@@ -243,6 +274,9 @@ router.put('/:id', asyncHandler(async (req, res) => {
   }
   if (row.status === 'approved') {
     return res.status(400).json({ error: 'لا يمكن تعديل تقرير تمت الموافقة عليه' });
+  }
+  if (row.status === 'submitted' && row.review_started_at && req.user.role !== 'admin') {
+    return res.status(403).json({ error: 'التقرير قيد المراجعة من المشرف — لا يمكن التعديل الآن' });
   }
 
   const b = req.body || {};

@@ -427,6 +427,8 @@
       'usr.review.rejected': 'تم رفض التقرير',
       'usr.review.empty': 'لا توجد تقارير بانتظار المراجعة',
       'usr.edit.title': 'تعديل التقرير',
+      'usr.lock.badge': 'قيد المراجعة',
+      'usr.lock.cannotEdit': 'التقرير قيد المراجعة من المشرف — لا يمكن التعديل الآن',
 
       // Share viewer
       'shr.title': 'بيانات مشتركة',
@@ -863,6 +865,8 @@
       'usr.review.rejected': 'Report rejected',
       'usr.review.empty': 'No reports awaiting review',
       'usr.edit.title': 'Edit Report',
+      'usr.lock.badge': 'Under review',
+      'usr.lock.cannotEdit': 'This report is under review — editing is disabled',
 
       // Share viewer
       'shr.title': 'Shared Data',

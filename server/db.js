@@ -108,7 +108,8 @@ CREATE TABLE IF NOT EXISTS reports (
   status TEXT DEFAULT 'submitted',
   reviewed_by INTEGER,
   reviewed_at TEXT,
-  review_note TEXT
+  review_note TEXT,
+  review_started_at TEXT
 );
 
 CREATE TABLE IF NOT EXISTS activity_log (
@@ -258,7 +259,8 @@ async function migrateColumns(layer) {
     ],
     reports: [
       ['year', 'INTEGER NOT NULL DEFAULT 0'],
-      ['ref_code', 'TEXT']
+      ['ref_code', 'TEXT'],
+      ['review_started_at', 'TEXT']
     ]
   };
   for (const [table, cols] of Object.entries(migrations)) {
