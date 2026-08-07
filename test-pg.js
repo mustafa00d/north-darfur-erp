@@ -100,21 +100,13 @@ check('months exported', MONTHS.length === 12);
 const camel = await layer.all('SELECT id, name_ar AS "nameAr", name_en AS "nameEn", color FROM localities ORDER BY id LIMIT 1');
 check('camelCase aliases preserved', camel.length === 1 && camel[0].nameAr && camel[0].nameEn, JSON.stringify(camel[0]));
 
-// 14. app_settings (KV) بدون عمود id — يجب ألا تُضاف RETURNING id
-const kv = await layer.run(
-  "INSERT INTO app_settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value",
-  ['gemini_api_key', 'pg-test']
-);
-const kvRead = await layer.get('SELECT value FROM app_settings WHERE key = ?', ['gemini_api_key']);
-check('app_settings upsert (no id column)', kvRead.value === 'pg-test', JSON.stringify(kvRead));
-
-// 15. activity_log مع entity_id فارغ (نمط مسارات الذكاء)
+// 14. activity_log مع entity_id فارغ
 await layer.run(
   'INSERT INTO activity_log (user_id, user_name, action, entity_type, entity_id, details) VALUES (?, ?, ?, ?, ?, ?)',
-  [1, 'مدير', 'تفعيل الذكاء الاصطناعي', 'ai', null, '']
+  [1, 'مدير', 'حذف تقرير', 'report', null, '']
 );
-const aiLog = await layer.get('SELECT action FROM activity_log WHERE entity_type = ? ORDER BY id DESC LIMIT 1', ['ai']);
-check('activity_log with null entity_id', aiLog && aiLog.action === 'تفعيل الذكاء الاصطناعي', JSON.stringify(aiLog));
+const aiLog = await layer.get('SELECT action FROM activity_log WHERE entity_type = ? ORDER BY id DESC LIMIT 1', ['report']);
+check('activity_log with null entity_id', aiLog && aiLog.action === 'حذف تقرير', JSON.stringify(aiLog));
 
 console.log(`\n===== PG: ${pass} ناجح / ${fail} فشل =====`);
 await pg.close();

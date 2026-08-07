@@ -8,7 +8,7 @@
     "start": "node server/index.js",
     "dev": "node --watch server/index.js",
     "seed": "node server/seed.js",
-    "test": "node test-api.js && node test-e2e.js && node test-security.js && node test-features.js && node test-ai.js && node test-pg.js"
+    "test": "node test-api.js && node test-e2e.js && node test-security.js && node test-features.js && node test-pg.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

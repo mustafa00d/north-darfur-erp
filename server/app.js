@@ -15,7 +15,6 @@ import activityRoutes from './routes/activity.js';
 import notificationRoutes from './routes/notifications.js';
 import shareRoutes from './routes/share.js';
 import backupRoutes from './routes/backup.js';
-import aiRoutes from './routes/ai.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const publicDir = path.join(__dirname, '..', 'public');
@@ -56,16 +55,6 @@ const shareAuthLimiter = rateLimit({
 });
 app.use('/api/share/public/:token/auth', shareAuthLimiter);
 
-// تحديد معدل أسئلة مساعد الذكاء (حماية من الاستغلال)
-const chatLimiter = rateLimit({
-  windowMs: 60 * 1000,
-  max: 30,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { error: 'أسئلة كثيرة، انتظر قليلاً' }
-});
-app.use('/api/ai/chat', chatLimiter);
-
 // API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/meta', metaRoutes);
@@ -77,7 +66,6 @@ app.use('/api/activity', activityRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/share', shareRoutes);
 app.use('/api/backup', backupRoutes);
-app.use('/api/ai', aiRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', time: new Date().toISOString() });

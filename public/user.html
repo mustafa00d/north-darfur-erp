@@ -270,7 +270,6 @@
 
     <script src="js/i18n.js"></script>
     <script src="js/api.js"></script>
-    <script src="js/chat.js"></script>
     <script>
         let meta = null;
         let currentUser = null;
@@ -329,7 +328,6 @@
                 loadReviewList();
             }
             setInterval(loadNotifications, 60000);
-            if (window.initChatWidget) window.initChatWidget();
         }
 
         async function loadMyStats() {
