@@ -133,6 +133,11 @@ CREATE TABLE IF NOT EXISTS notifications (
   created_at TEXT DEFAULT (${ts})
 );
 
+CREATE TABLE IF NOT EXISTS cron_log (
+  job TEXT PRIMARY KEY,
+  last_run TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS share_links (
   id ${pk},
   token TEXT UNIQUE NOT NULL,

@@ -17,6 +17,15 @@ function getTransporter() {
   return transporter;
 }
 
+export async function sendSimpleMail(to, subject, text) {
+  const t = getTransporter();
+  if (t) {
+    await t.sendMail({ ...baseSender(), to, subject, text });
+  } else {
+    console.log(`[MAIL] (SMTP غير مهيأ) إلى ${to}: ${subject}`);
+  }
+}
+
 export async function sendResetEmail(to, name, link) {
   const from = process.env.MAIL_FROM || process.env.SMTP_USER || 'no-reply@ndr.org';
   const subject = 'استعادة كلمة المرور | نظام تقارير شمال دارفور — Password Reset';
