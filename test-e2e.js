@@ -55,7 +55,7 @@ const server = app.listen(3101, async () => {
     const locStat = stats.data.localityStats.find(x => x.id === 2);
     check('analytics locality aggregation', locStat && locStat.count === 1 && locStat.totalAmount === 850000, JSON.stringify(locStat));
     check('month stats present', stats.data.monthStats.length === 12);
-    check('status stats present', Array.isArray(stats.data.statusStats));
+    check('status stats present', stats.data.statusStats && typeof stats.data.statusStats.submitted === 'number' && stats.data.statusStats.submitted >= 1);
 
     // Review + notification flow
     const rev = await api(`/api/reports/${r.id}/review`, 'POST', { status: 'rejected', note: 'مستندات ناقصة' }, aTok);

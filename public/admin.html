@@ -135,6 +135,49 @@
 
             <!-- Analytics Tab -->
             <div class="tab-content active" id="analyticsTab">
+                <div class="filter-group" style="margin-bottom:15px;flex-wrap:wrap;">
+                    <span style="font-weight:700;color:var(--text-light);font-size:0.85rem;align-self:center;" data-i18n="adm.filt.title">تصفية التحليلات</span>
+                    <select id="anYear" onchange="refreshAnalytics()">
+                        <option value="" data-i18n="adm.filt.allYears">كل السنوات</option>
+                    </select>
+                    <select id="anMonth" onchange="refreshAnalytics()">
+                        <option value="" data-i18n="adm.filt.all">الكل</option>
+                    </select>
+                    <select id="anLocality" onchange="refreshAnalytics()">
+                        <option value="" data-i18n="adm.filt.allLoc">كل المحليات</option>
+                    </select>
+                    <select id="anDonor" onchange="refreshAnalytics()">
+                        <option value="" data-i18n="adm.filt.allDon">كل الممولين</option>
+                    </select>
+                    <select id="anSector" onchange="refreshAnalytics()">
+                        <option value="" data-i18n="adm.filt.allSec">كل القطاعات</option>
+                    </select>
+                    <select id="anStatus" onchange="refreshAnalytics()">
+                        <option value="" data-i18n="adm.filt.allStat">كل الحالات</option>
+                        <option value="submitted" data-i18n="status.submitted">قيد المراجعة</option>
+                        <option value="approved" data-i18n="status.approved">تمت الموافقة</option>
+                        <option value="rejected" data-i18n="status.rejected">مرفوض</option>
+                    </select>
+                    <button class="btn btn-outline" onclick="resetAnalyticsFilters()" style="padding:8px 14px;">
+                        <span data-i18n="adm.filt.reset">إعادة ضبط</span>
+                    </button>
+                </div>
+
+                <div class="summary-cards" id="analyticsKpis" style="padding-top:0;margin-bottom:15px;">
+                    <div class="summary-card">
+                        <div class="summary-number" id="kpiApprovalRate">—</div>
+                        <div class="summary-label" data-i18n="adm.kpi.approval">نسبة الاعتماد</div>
+                    </div>
+                    <div class="summary-card green">
+                        <div class="summary-number" id="kpiActiveLocalities">—</div>
+                        <div class="summary-label" data-i18n="adm.kpi.activeLoc">محليات نشطة</div>
+                    </div>
+                    <div class="summary-card blue">
+                        <div class="summary-number" id="kpiMonthCompare">—</div>
+                        <div class="summary-label" data-i18n="adm.kpi.monthCmp">الشهر الحالي (عن السابق)</div>
+                    </div>
+                </div>
+
                 <div class="charts-grid">
                     <div class="chart-card">
                         <h4 data-i18n="adm.chart.byLocality">التوزيع حسب المحلية</h4>
@@ -156,6 +199,14 @@
                         <canvas id="monthlyChart" width="350" height="300"></canvas>
                     </div>
                     <div class="chart-card">
+                        <h4 data-i18n="adm.chart.monthAmount">المبالغ الشهرية</h4>
+                        <canvas id="monthAmountChart" width="350" height="300"></canvas>
+                    </div>
+                    <div class="chart-card">
+                        <h4 data-i18n="adm.chart.growth">منحنى النمو (تراكمي)</h4>
+                        <canvas id="growthChart" width="350" height="300"></canvas>
+                    </div>
+                    <div class="chart-card">
                         <h4 data-i18n="adm.chart.amountLoc">المبالغ حسب المحلية</h4>
                         <canvas id="amountChart" width="350" height="300"></canvas>
                     </div>
@@ -174,6 +225,22 @@
                         <div class="legend-container" id="yearlyStats" style="justify-content:center;flex-wrap:wrap;"></div>
                     </div>
                 </div>
+
+                <div class="management-section" style="margin-top:20px;">
+                    <h3>
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M9 17l-5-5 1.41-1.41L9 14.17l9.59-9.58L20 6l-11 11zM3 21h18v-2H3v2z"/></svg>
+                        <span data-i18n="adm.target.title">الإنجاز مقابل الهدف (تلقائي)</span>
+                    </h3>
+                    <p style="color:var(--text-light);margin-bottom:15px;font-size:0.9rem;" data-i18n="adm.target.desc">الهدف = متوسط آخر 12 شهراً (بدون مفتاح خارجي — يحسب تلقائياً من البيانات).</p>
+                    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:15px;">
+                        <select id="tgYear" onchange="loadTargets()"></select>
+                        <select id="tgMonth" onchange="loadTargets()">
+                            <option value="" data-i18n="adm.target.yearView">عرض سنوي</option>
+                        </select>
+                        <button class="btn btn-primary" onclick="loadTargets()"><span data-i18n="adm.filt.apply">تطبيق</span></button>
+                    </div>
+                    <div id="targetsTable"></div>
+                </div>
             </div>
 
             <!-- Reports Tab -->
@@ -184,7 +251,11 @@
                         <div style="display:flex;gap:10px;flex-wrap:wrap;">
                             <button class="btn btn-success" onclick="exportToCSV()">
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
-                                <span data-i18n="adm.dash.exportExcel">تصدير Excel</span>
+                                <span data-i18n="adm.csv.title">تصدير CSV</span>
+                            </button>
+                            <button class="btn btn-success" onclick="exportExcel()">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm-1 7V3.5L18.5 9H13z"/></svg>
+                                <span data-i18n="adm.export.xlsx">تصدير Excel (xlsx)</span>
                             </button>
                             <button class="btn btn-primary" onclick="exportToPDF()">
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM8 14H6v-8h2v8zm4 0h-2V6h2v8zm4 0h-2v-4h2v4z"/></svg>
@@ -590,6 +661,7 @@
 
         async function initDashboard() {
             meta = await API.request('/meta');
+            window.MONTH_NAMES = (meta.months || []).map(m => I18N.pick(m.nameAr, m.nameEn));
             await loadReports();
             await Promise.all([
                 loadUsers(),
@@ -600,10 +672,12 @@
                 loadShareLinks(),
                 loadAnalytics()
             ]);
+            loadTargets();
         }
 
         async function loadAnalytics() {
-            const stats = await API.request('/analytics/stats');
+            const q = analyticsFilters();
+            const stats = await API.request('/analytics/stats' + q);
             const reports = await API.request('/reports');
             const totalAmount = reports.reduce((s, r) => s + (Number(r.amountReceived) || 0), 0);
             const totalBeneficiaries = reports.reduce((s, r) => s + (Number(r.beneficiariesTotal) || 0), 0);
@@ -614,7 +688,164 @@
             document.getElementById('dashTotalBeneficiaries').textContent = formatNumber(totalBeneficiaries);
             document.getElementById('dashPending').textContent = formatNumber(pending);
 
+            renderAnalyticsKpis(stats);
             initCharts(stats);
+        }
+
+        function analyticsFilters() {
+            const picks = [
+                ['anYear', 'year'], ['anMonth', 'month'], ['anLocality', 'localityId'],
+                ['anDonor', 'donorId'], ['anSector', 'sectorId'], ['anStatus', 'status']
+            ];
+            const parts = picks.map(([id, name]) => {
+                const el = document.getElementById(id);
+                const v = el && el.value;
+                return v ? `${name}=${encodeURIComponent(v)}` : null;
+            }).filter(Boolean);
+            return parts.length ? '?' + parts.join('&') : '';
+        }
+
+        function refreshAnalytics() {
+            loadAnalytics().catch(() => {});
+        }
+
+        function resetAnalyticsFilters() {
+            ['anYear', 'anMonth', 'anLocality', 'anDonor', 'anSector', 'anStatus'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.value = '';
+            });
+            I18N.apply();
+            refreshAnalytics();
+        }
+
+        function renderAnalyticsKpis(stats) {
+            document.getElementById('kpiApprovalRate').textContent = stats.approvalRate == null ? '—' : stats.approvalRate + '%';
+            document.getElementById('kpiActiveLocalities').textContent = `${stats.activeLocalityCount} / ${stats.totalLocalities}`;
+
+            const mc = stats.monthCompare;
+            const diff = mc.deltaCount;
+            const el = document.getElementById('kpiMonthCompare');
+            if (diff === 0) {
+                el.textContent = '±0';
+                el.style.color = 'var(--text-light)';
+            } else if (diff > 0) {
+                el.textContent = '+' + formatNumber(diff);
+                el.style.color = '#1E8E3E';
+            } else {
+                el.textContent = String(diff);
+                el.style.color = 'var(--danger-color)';
+            }
+        }
+
+        function populateAnalyticsSelects(stats) {
+            const yearSel = document.getElementById('anYear');
+            const years = new Set();
+            if (stats && stats.yearStats) stats.yearStats.forEach(y => { if (y.year) years.add(y.year); });
+            const now = new Date().getFullYear();
+            for (let y = now; y >= now - 6; y--) years.add(y);
+            yearSel.innerHTML = `<option value="" data-i18n="adm.filt.allYears">كل السنوات</option>` +
+                [...years].sort((a, b) => b - a).map(y => `<option value="${y}">${y}</option>`).join('');
+
+            const monthSel = document.getElementById('anMonth');
+            monthSel.innerHTML = `<option value="" data-i18n="adm.filt.all">الكل</option>` +
+                (window.MONTH_NAMES || []).map((m, i) => `<option value="${i + 1}">${m}</option>`).join('');
+
+            const locSel = document.getElementById('anLocality');
+            locSel.innerHTML = `<option value="" data-i18n="adm.filt.allLoc">كل المحليات</option>` +
+                (meta.localities || []).map(l => `<option value="${l.id}">${escapeHtml(I18N.pick(l.nameAr, l.nameEn))}</option>`).join('');
+
+            const donSel = document.getElementById('anDonor');
+            donSel.innerHTML = `<option value="" data-i18n="adm.filt.allDon">كل الممولين</option>` +
+                (meta.donors || []).map(d => `<option value="${d.id}">${escapeHtml(d.name)}</option>`).join('');
+
+            const secSel = document.getElementById('anSector');
+            secSel.innerHTML = `<option value="" data-i18n="adm.filt.allSec">كل القطاعات</option>` +
+                (meta.supportTypes || []).map(s => `<option value="${s.id}">${escapeHtml(I18N.pick(s.nameAr, s.nameEn))}</option>`).join('');
+
+            const tgYear = document.getElementById('tgYear');
+            tgYear.innerHTML = [...years].sort((a, b) => b - a).map(y => `<option value="${y}" ${y === now ? 'selected' : ''}>${y}</option>`).join('');
+            const tgMonth = document.getElementById('tgMonth');
+            tgMonth.innerHTML = `<option value="" data-i18n="adm.target.yearView">عرض سنوي</option>` +
+                (window.MONTH_NAMES || []).map((m, i) => `<option value="${i + 1}">${m}</option>`).join('');
+            I18N.apply();
+        }
+
+        async function loadTargets() {
+            const year = document.getElementById('tgYear').value || new Date().getFullYear();
+            const month = document.getElementById('tgMonth').value;
+            const out = document.getElementById('targetsTable');
+            out.innerHTML = `<div class="empty-state"><h3>${I18N.t('adm.target.thinking')}</h3></div>`;
+            try {
+                const r = await API.request(`/analytics/targets?year=${year}${month ? '&month=' + month : ''}`);
+                const rows = r.targets.filter(t => t.actualAmount > 0 || t.targetAmount > 0);
+                if (!rows.length) {
+                    out.innerHTML = `<div class="empty-state"><h3>${I18N.t('adm.target.empty')}</h3></div>`;
+                    return;
+                }
+                rows.sort((a, b) => (b.pctAmount ?? -1) - (a.pctAmount ?? -1));
+                const bar = (pct, color) => pct == null
+                    ? `<div style="font-size:0.8rem;color:var(--text-light);">—</div>`
+                    : `<div style="height:8px;background:rgba(0,0,0,0.1);border-radius:5px;overflow:hidden;">
+                        <div style="height:100%;width:${Math.min(pct, 100)}%;background:${color};border-radius:5px;"></div>
+                       </div>`;
+                const color = pct => pct == null ? 'var(--text-light)' : pct >= 100 ? '#1E8E3E' : pct >= 60 ? '#F59E0B' : '#D32F2F';
+                out.innerHTML = `
+                    <div style="overflow-x:auto;">
+                    <table class="data-table" style="width:100%;border-collapse:collapse;font-size:0.9rem;">
+                        <thead><tr>
+                            <th style="text-align:start;padding:8px;">${I18N.t('adm.csv.locality')}</th>
+                            <th style="text-align:end;padding:8px;">${I18N.t('adm.target.actual')}</th>
+                            <th style="text-align:end;padding:8px;">${I18N.t('adm.target.goal')}</th>
+                            <th style="width:140px;padding:8px;">${I18N.t('adm.target.pct')} (مبالغ)</th>
+                            <th style="text-align:end;padding:8px;">${I18N.t('adm.target.actualBen')}</th>
+                            <th style="text-align:end;padding:8px;">${I18N.t('adm.target.goalBen')}</th>
+                        </tr></thead>
+                        <tbody>
+                        ${rows.map(t => `
+                            <tr style="border-bottom:1px solid rgba(0,0,0,0.08);">
+                                <td style="padding:8px;text-align:start;"><span class="dot" style="background:${t.color || '#673AB7'}"></span> ${escapeHtml(I18N.pick(t.nameAr, t.nameEn))}</td>
+                                <td style="padding:8px;text-align:end;"><strong>${formatNumber(t.actualAmount)}</strong></td>
+                                <td style="padding:8px;text-align:end;color:var(--text-light);">${formatNumber(t.targetAmount)}</td>
+                                <td style="padding:8px;">${bar(t.pctAmount, color(t.pctAmount))}<small style="color:${color(t.pctAmount)};font-weight:700;">${t.pctAmount == null ? '—' : t.pctAmount + '%'}</small></td>
+                                <td style="padding:8px;text-align:end;"><strong>${formatNumber(t.actualBen)}</strong></td>
+                                <td style="padding:8px;text-align:end;color:var(--text-light);">${formatNumber(t.targetBen)}</td>
+                            </tr>`).join('')}
+                        </tbody>
+                        <tfoot><tr style="border-top:2px solid rgba(0,0,0,0.15);font-weight:700;">
+                            <td style="padding:10px;text-align:start;" colspan="1">${I18N.t('adm.target.total')}</td>
+                            <td style="padding:10px;text-align:end;">${formatNumber(r.totals.actualAmount)}</td>
+                            <td style="padding:10px;text-align:end;">${formatNumber(r.totals.targetAmount)}</td>
+                            <td style="padding:10px;">${bar(r.totals.pctAmount, color(r.totals.pctAmount))}<small style="color:${color(r.totals.pctAmount)};font-weight:700;">${r.totals.pctAmount == null ? '—' : r.totals.pctAmount + '%'}</small></td>
+                            <td style="padding:10px;text-align:end;">${formatNumber(r.totals.actualBen)}</td>
+                            <td style="padding:10px;text-align:end;">${formatNumber(r.totals.targetBen)}</td>
+                        </tr></tfoot>
+                    </table>
+                    </div>`;
+            } catch (e) {
+                out.innerHTML = `<p style="color:var(--danger-color);font-size:0.9rem;">${escapeHtml(e.message)}</p>`;
+            }
+        }
+
+        async function exportExcel() {
+            try {
+                const token = API.getToken();
+                const resp = await fetch('/api/analytics/export' + analyticsFilters(), {
+                    headers: { Authorization: 'Bearer ' + token }
+                });
+                if (!resp.ok) {
+                    const err = await resp.json().catch(() => null);
+                    throw new Error((err && err.error) || 'Export failed');
+                }
+                const blob = await resp.blob();
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = `north-darfur-reports-${new Date().toISOString().split('T')[0]}.xlsx`;
+                link.click();
+                URL.revokeObjectURL(link.href);
+                showToast(I18N.t('adm.export.xlsxDone'));
+            } catch (e) {
+                showToast(e.message, 'error');
+            }
         }
 
         // ==================== Dashboard stat modals ====================
@@ -1561,6 +1792,12 @@
             document.getElementById('sectorLegend').innerHTML = secData.map(s => `<div class="legend-item"><div class="legend-color" style="background:${s.color}"></div>${escapeHtml(s.label)}</div>`).join('');
 
             drawLineChart('monthlyChart', stats.monthStats.map(m => ({ label: pickName(m), value: m.count })));
+            drawBarChart('monthAmountChart', stats.monthStats.filter(m => m.totalAmount > 0).map(m => ({ label: pickName(m), value: m.totalAmount, color: '#7C3AED' })));
+            let cumulative = 0;
+            drawLineChart('growthChart', stats.monthStats.map(m => {
+                cumulative += m.totalAmount;
+                return { label: pickName(m), value: cumulative };
+            }));
             drawBarChart('amountChart', stats.localityStats.filter(s => s.totalAmount > 0).map(s => ({ label: pickName(s), value: s.totalAmount, color: s.color })));
             drawBarChart('beneficiariesChart', stats.localityStats.filter(s => s.totalBeneficiaries > 0).map(s => ({ label: pickName(s), value: s.totalBeneficiaries, color: s.color })));
 
@@ -1576,6 +1813,7 @@
             drawBarChart('yearlyChart', stats.yearStats.map(y => ({ label: String(y.year), value: y.count, color: '#673AB7' })));
             document.getElementById('yearlyStats').innerHTML = stats.yearStats.map(y => `<div class="legend-item">${y.year}: ${formatNumber(y.count)}</div>`).join('');
             populateYearFilter(stats);
+            populateAnalyticsSelects(stats);
         }
 
         // ==================== Ops ====================

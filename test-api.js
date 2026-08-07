@@ -71,7 +71,7 @@ const server = app.listen(port, async () => {
     // 7. User creates report
     const report = await api('/api/reports', 'POST', {
       errName: 'غرفة طوارئ الفاشر', localityId: 1, donorId: 1, supportTypeId: 1,
-      supportDescription: 'توزيع سلال غذائية', partnerId: 1, monthId: 8,
+      supportDescription: 'توزيع سلال غذائية', partnerId: 1, monthId: 8, year: 2026,
       amountReceived: 1500000, beneficiariesTotal: 5000,
       beneficiariesMale: 2300, beneficiariesFemale: 2700,
       challenges: 'صعوبة الوصول', positiveOutcomes: 'استفادة واسعة'
@@ -96,6 +96,37 @@ const server = app.listen(port, async () => {
     const summary = await api('/api/analytics/summary');
     check('public summary', summary.data?.totalReports === 1 && summary.data?.totalAmount === 1500000);
 
+    // 12. Filtered stats (multi-dimension)
+    const statsSec = await api('/api/analytics/stats?sectorId=2', 'GET', null, adminToken);
+    check('stats sector filter excludes', statsSec.data?.sectorStats[0]?.count === 0);
+    const statsYearMonth = await api('/api/analytics/stats?year=2026&month=8', 'GET', null, adminToken);
+    check('stats year+month filter', statsYearMonth.data?.monthStats[7]?.count === 1);
+    const statsLocDon = await api('/api/analytics/stats?localityId=2&donorId=1&status=submitted', 'GET', null, adminToken);
+    check('stats locality+donor+status filter', statsLocDon.data?.localityStats[1]?.count === 0);
+
+    // 13. New KPI fields
+    check('kpi active localities', stats.data.activeLocalityCount === 1 && stats.data.totalLocalities === 16);
+    check('kpi approval rate null before review', stats.data.approvalRate === null);
+    check('kpi month compare delta', stats.data.monthCompare?.deltaCount === 1);
+
+    // 14. Auto targets (admin only)
+    const tg = await api('/api/analytics/targets?year=2026&month=8', 'GET', null, adminToken);
+    check('targets length 16', tg.status === 200 && tg.data.targets.length === 16);
+    check('targets actual amount', tg.data.totals.actualAmount === 1500000);
+    check('targets no history -> null pct', tg.data.totals.pctAmount === null);
+    const tgYear = await api('/api/analytics/targets?year=2026', 'GET', null, adminToken);
+    check('targets yearly view actual', tgYear.data.totals.actualAmount === 1500000);
+    const tgForbidden = await api('/api/analytics/targets', 'GET', null, userToken);
+    check('targets admin only', tgForbidden.status === 403);
+
+    // 15. Excel export (admin only, binary xlsx)
+    const expRes = await fetch(base + '/api/analytics/export', { headers: { Authorization: `Bearer ${adminToken}` } });
+    const expBuf = Buffer.from(await expRes.arrayBuffer());
+    check('excel export 200 + content-type', expRes.status === 200 && expRes.headers.get('content-type').includes('spreadsheetml'));
+    check('excel export non-empty (PK zip)', expBuf.length > 2000 && expBuf.subarray(0, 2).toString('latin1') === 'PK');
+    const expForbidden = await api('/api/analytics/export', 'GET', null, userToken);
+    check('excel export admin only', expForbidden.status === 403);
+
     // 12. Update report (owner)
     const upd = await api(`/api/reports/${reportId}`, 'PUT', { supportDescription: 'تعديل التفاصيل' }, userToken);
     check('owner edit report', upd.status === 200);
@@ -112,7 +143,11 @@ const server = app.listen(port, async () => {
     const activity = await api('/api/activity', 'GET', null, adminToken);
     check('activity log entries', activity.data?.length >= 3);
 
-    // 16. Create share link
+    // 16. Approval rate KPI after review
+    const statsAfter = await api('/api/analytics/stats', 'GET', null, adminToken);
+    check('kpi approval rate 100% after approve', statsAfter.data.approvalRate === 100);
+
+    // 17. Create share link
     const share = await api('/api/share', 'POST', { name: 'تقرير شهري', expiryHours: 24, shareReports: true, shareAnalytics: true, shareUsers: false }, adminToken);
     check('create share link', share.status === 201, JSON.stringify(share.data));
     const token = share.data?.token;
